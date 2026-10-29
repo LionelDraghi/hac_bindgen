@@ -1,0 +1,26 @@
+--
+-- ACATS B26001A.ADA
+--
+-- Failure: Missing " closing the string literal at 8:29..70
+--
+PROCEDURE B26001A IS
+
+     S3A : STRING (1..3) := "ABC%;           -- ERROR: QUOTE EXPECTED.
+     I1  : INTEGER;
+     S3B : STRING (1..3) := %ABC";           -- ERROR: PERCENT EXPECTED.
+     I2  : INTEGER;
+     VAR2 : STRING (1..2);
+     VAR3 : STRING (1..3);
+
+BEGIN
+
+     VAR3 := "ABC%;                          -- ERROR: QUOTE EXPECTED.
+     NULL;
+     VAR2 := %BC";                           -- ERROR: PERCENT EXPECTED.
+     NULL;
+     VAR3 := "A% & VAR2;                     -- ERROR: QUOTE EXPECTED.
+     NULL;
+     VAR3 := 'X' & %AB";                     -- ERROR: PERCENT EXPECTED.
+     NULL;
+
+END B26001A;

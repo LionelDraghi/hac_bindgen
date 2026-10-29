@@ -1,0 +1,103 @@
+--
+-- ACATS B57001D
+--
+-- Failure: There is no loop with the label 'LOOP3' enclosing the exit statement at 80:1..39
+--
+PROCEDURE  B57001D  IS
+BEGIN
+
+
+     BEGIN
+
+          FOR  LOOP_PARAMETER  IN  1..11  LOOP
+
+               NULL ;
+--             EXIT  LOOP_PARAMETER ;           -- ERROR: LOOP_PARAMETER
+
+          END LOOP;
+
+
+          FOR  LOOP_PARAMETER  IN  CHARACTER  LOOP
+
+               NULL ;
+
+               FOR  I  IN  INTEGER RANGE 1..4  LOOP
+                    NULL ;
+--                  EXIT  LOOP_PARAMETER  WHEN  6 = I ;-- ERROR: LOOP_P.
+               END LOOP;
+
+          END LOOP;
+
+
+          LOOP_ID :
+          LOOP
+
+               NULL ;
+
+--             EXIT  LOOP_PARAMETER ;  -- ERROR: UNDECLARED (BUT USED
+                                       --    ABOVE AS LOOP PARAMETER;
+                                       --    NO PAR. IN THIS LOOP)
+
+          END LOOP  LOOP_ID ;
+
+     END ;
+
+     -------------------------------------------------------------------
+
+     BEGIN
+
+          LOOP_ID1 :
+          FOR  LOOP_PARAMETER  IN  1..11  LOOP
+
+               NULL ;
+               EXIT  LOOP_ID1 ;          -- OK
+
+          END LOOP  LOOP_ID1 ;
+
+
+          FOR  LOOP_PARAMETER  IN  1..11  LOOP
+
+               NULL ;
+--             EXIT  LOOP_ID1 ;        -- ERROR: FOREIGN LOOP IDENTIF.
+
+          END LOOP;
+
+
+          LOOP1 :
+          FOR  LOOP_PARAMETER  IN  CHARACTER  LOOP
+
+               NULL ;
+
+               BLOCK1 :
+               BEGIN
+
+                    LOOP2 :
+                    FOR  I  IN  INTEGER RANGE 1..4  LOOP
+                         NULL ;
+                         EXIT  LOOP1   ;     -- OK
+--                       EXIT  BLOCK1  ;     -- ERROR: NOT A LOOP ID.
+                         EXIT  LOOP2   ;     -- OK
+                         EXIT  LOOP3   ;     -- ERROR: FOREIGN LOOP ID.
+                         EXIT  LOOP_ID1;     -- ERROR: FOREIGN LOOP ID.
+                    END LOOP  LOOP2 ;
+
+
+                    LOOP3 :
+                    FOR  I  IN  INTEGER RANGE 1..4  LOOP
+                         NULL ;
+                         EXIT  LOOP1   ;     -- OK
+                         EXIT  BLOCK1  ;     -- ERROR: NOT A LOOP ID.
+                         EXIT  LOOP2   ;     -- ERROR: FOREIGN LOOP ID.
+                         EXIT  LOOP3   ;     -- OK
+                         EXIT  LOOP_ID1;     -- ERROR: FOREIGN LOOP ID.
+                    END LOOP  LOOP3 ;
+
+               END  BLOCK1 ;
+
+          END LOOP  LOOP1 ;
+
+     END ;
+
+
+
+END B57001D ;

@@ -1,0 +1,58 @@
+--
+-- ACATS B24001B.ADA
+--
+-- Failure: Expression is expected at 24:12
+--
+PROCEDURE B24001B IS
+
+     F1, F2 : FLOAT;
+
+BEGIN
+
+     F1 := 1__2.3;      -- ERROR: CONSECUTIVE UNDERSCORES IN A
+                        --        FLOATING POINT LITERAL
+     NULL;
+     F1 := 1.2__3;      -- ERROR: CONSECUTIVE UNDERSCORES IN A
+                        --        FLOATING POINT LITERAL
+     NULL;
+     F1 := 1.2E0__1;    -- ERROR: CONSECUTIVE UNDERSCORES IN A
+                        --        FLOATING POINT LITERAL
+     NULL;
+     F1 := 16#1__2.A#;  -- ERROR: CONSECTUIVE UNDERSCORES IN A
+                        --        FLOATING POINT LITERAL
+     NULL;
+     F1 := _1.2;        -- ERROR: UNDERSCORE LEADS A FLOATING POINT
+                        --        LITERAL
+     NULL;
+     F1 := 1.2_;        -- ERROR: UNDERSCORE TRAILS A FLOATING POINT
+                        --        LITERAL
+     NULL;
+     F1 := 1.2E2_;      -- ERROR: UNDERSCORE TRAILS A FLOATING POINT
+                        --        LITERAL
+     NULL;
+     F1 := 12_.1;       -- ERROR: UNDERSCORE ADJACENT TO .
+     NULL;
+     F1 := 12._1;       -- ERROR: UNDERSCORE ADJACENT TO .
+     NULL;
+     F1 := 2.0_E3;      -- ERROR: UNDERSCORE ADJACENT TO E
+     NULL;
+     F2 := 2.0E_3;      -- ERROR: UNDERSCORE ADJACENT TO E
+     NULL;
+     F1 := 2.0E+_3;     -- ERROR: UNDERSCORE ADJACENT TO +
+     NULL;
+     F2 := 2.0E_+3;     -- ERROR: UNDERSCORE ADJACENT TO +
+     NULL;
+     F1 := 2.0E-_3;     -- ERROR: UNDERSCORE ADJACENT TO -
+     NULL;
+     F2 := 2.0E_-3;     -- ERROR: UNDERSCORE ADJACENT TO -
+     NULL;
+     F2 := 16_#2.A#;    -- ERROR: UNDERSCORE ADJACENT TO #
+     NULL;
+     F2 := 16#_2.A#;    -- ERROR: UNDERSCORE ADJACENT TO #
+     NULL;
+     F2 := 16#2.A_#;    -- ERROR: UNDERSCORE ADJACENT TO #
+     NULL;
+     F2 := 16#2.A#_;    -- ERROR: UNDERSCORE ADJACENT TO #
+     NULL;
+
+END B24001B;

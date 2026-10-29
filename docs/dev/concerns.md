@@ -6,7 +6,7 @@ the details remain in the authoritative source.
 
 | Priority | Concern | Kind | Source | Status |
 |---|---|---|---|---|
-| P2 | Analysis-backend licensing must be evaluated before the backend is selected (components used, licence text, linking, distribution alongside HAC) | Design | to record in [design_discussions.md](design_discussions.md) at M3 | Open |
+| P2 | Backend selection needs prototype, Ada-coverage, semantic-resolution, and license/redistribution checks for both candidates | Design | [design_discussions.md](design_discussions.md#analysis-backend-evaluation) | Open |
 | P2 | The `with Import => True` declaration mechanism in a package specification is unverified | Design | [hac_interfacing_notes.md](hac_interfacing_notes.md) | Open |
 | P3 | Boolean has no direct `To_HAC` overload: mapping route (generic enum vs Integer) to be tested and fixed | Design | [hac_interfacing_notes.md](hac_interfacing_notes.md) | Open |
 

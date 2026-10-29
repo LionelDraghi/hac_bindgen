@@ -1,0 +1,26 @@
+--
+-- ACATS B53002B
+--
+-- Failure: 'end if' is expected at 22:6..10
+--
+PROCEDURE B53002B IS
+
+     B1, B2 : BOOLEAN;
+     I1, I2 : INTEGER;
+
+BEGIN
+     B1 := TRUE;
+     B2 := FALSE;
+
+     IF B1 AND B2 THEN
+          I1 := 1;
+     ELSIF B2 THEN
+          I1 := 2;
+     ELSIF B1 THEN
+          I1 := 3;
+     ELSE I1 := 7;
+     ELSIF TRUE THEN     -- ERROR: ELSE PRECEDES ELSIF.
+          I1 := 9;
+     END IF;
+
+END B53002B;

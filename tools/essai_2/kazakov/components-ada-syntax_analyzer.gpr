@@ -1,0 +1,90 @@
+with "../components/components.gpr";
+with "../components/components-ada.gpr";
+
+project Components.Ada.Syntax_Analyzer is
+
+   for Source_Files use
+       (  "parsers-ada_syntax_analyzer.adb",
+          "parsers-ada_syntax_analyzer.ads",
+          "parsers-ada_syntax_analyzer-bodies.adb",
+          "parsers-ada_syntax_analyzer-bodies.ads",
+          "parsers-ada_syntax_analyzer-declarations.adb",
+          "parsers-ada_syntax_analyzer-declarations.ads",
+          "parsers-ada_syntax_analyzer-declarations-formal_parameters.adb",
+          "parsers-ada_syntax_analyzer-declarations-formal_parameters.ads",
+          "parsers-ada_syntax_analyzer-declarations-renamings.ads",
+          "parsers-ada_syntax_analyzer-declarations-renamings.adb",
+          "parsers-ada_syntax_analyzer-declarations-specifications.adb",
+          "parsers-ada_syntax_analyzer-declarations-specifications.ads",
+          "parsers-ada_syntax_analyzer-declarations-stubs.ads",
+          "parsers-ada_syntax_analyzer-declarations-stubs.adb",
+          "parsers-ada_syntax_analyzer-declarations-types.adb",
+          "parsers-ada_syntax_analyzer-declarations-types.ads",
+          "parsers-ada_syntax_analyzer-expression_io.ads",
+          "parsers-ada_syntax_analyzer-get_anonymous_access_definition.adb",
+          "parsers-ada_syntax_analyzer-get_array_type_definition.adb",
+          "parsers-ada_syntax_analyzer-get_context.adb",
+          "parsers-ada_syntax_analyzer-get_context-get_entry.adb",
+          "parsers-ada_syntax_analyzer-get_context-get_for_clause.adb",
+          "parsers-ada_syntax_analyzer-get_context-get_formal_function.adb",
+          "parsers-ada_syntax_analyzer-get_context-get_formal_package.adb",
+          "parsers-ada_syntax_analyzer-get_context-get_formal_procedure.adb",
+          "parsers-ada_syntax_analyzer-get_context-get_formal_type.adb",
+          "parsers-ada_syntax_analyzer-get_context-get_object_declaration.adb",
+          "parsers-ada_syntax_analyzer-get_context-get_subtype.adb",
+          "parsers-ada_syntax_analyzer-get_context-get_type.adb",
+          "parsers-ada_syntax_analyzer-get_context-get_use.adb",
+          "parsers-ada_syntax_analyzer-get_context-get_variant_part.adb",
+          "parsers-ada_syntax_analyzer-get_function.adb",
+          "parsers-ada_syntax_analyzer-get_function_profile.adb",
+          "parsers-ada_syntax_analyzer-get_generic.adb",
+          "parsers-ada_syntax_analyzer-get_interfaces_list.adb",
+          "parsers-ada_syntax_analyzer-get_package.adb",
+          "parsers-ada_syntax_analyzer-get_pragma.adb",
+          "parsers-ada_syntax_analyzer-get_procedure.adb",
+          "parsers-ada_syntax_analyzer-get_procedure_profile.adb",
+          "parsers-ada_syntax_analyzer-get_protected.adb",
+          "parsers-ada_syntax_analyzer-get_separate.adb",
+          "parsers-ada_syntax_analyzer-get_sequence.adb",
+          "parsers-ada_syntax_analyzer-get_sequence-get_accept.adb",
+          "parsers-ada_syntax_analyzer-get_sequence-get_call.adb",
+          "parsers-ada_syntax_analyzer-get_sequence-get_case.adb",
+          "parsers-ada_syntax_analyzer-get_sequence-get_declare.adb",
+          "parsers-ada_syntax_analyzer-get_sequence-get_delay.adb",
+          "parsers-ada_syntax_analyzer-get_sequence-get_exception.adb",
+          "parsers-ada_syntax_analyzer-get_sequence-get_exit.adb",
+          "parsers-ada_syntax_analyzer-get_sequence-get_for_loop.adb",
+          "parsers-ada_syntax_analyzer-get_sequence-get_if.adb",
+          "parsers-ada_syntax_analyzer-get_sequence-get_loop.adb",
+          "parsers-ada_syntax_analyzer-get_sequence-get_parallel_block.adb",
+          "parsers-ada_syntax_analyzer-get_sequence-get_parallel_chunk.adb",
+          "parsers-ada_syntax_analyzer-get_sequence-get_return.adb",
+          "parsers-ada_syntax_analyzer-get_sequence-get_select.adb",
+          "parsers-ada_syntax_analyzer-get_sequence-get_while_loop.adb",
+          "parsers-ada_syntax_analyzer-get_task.adb",
+          "parsers-ada_syntax_analyzer-parse.adb",
+          "parsers-ada_syntax_analyzer-serialization.adb",
+          "parsers-ada_syntax_analyzer-serialization.ads",
+          "parsers-ada_syntax_analyzer-serialization-restore.adb",
+          "parsers-ada_syntax_analyzer-serialization-restore-get_node.adb",
+          "parsers-ada_syntax_analyzer-serialization-restore-get_program_node.adb",
+          "parsers-ada_syntax_analyzer-serialization-restore-get_program_node-get_declaration_context.adb",
+          "parsers-ada_syntax_analyzer-serialization-store.adb",
+          "parsers-ada_syntax_analyzer-statements.adb",
+          "parsers-ada_syntax_analyzer-statements.ads",
+          "parsers-ada_syntax_analyzer-text_io.adb",
+          "parsers-ada_syntax_analyzer-text_io-put.adb",
+          "parsers-ada_syntax_analyzer-text_io.ads",
+          "parsers-generic_arena_b_tree.adb",
+          "parsers-generic_arena_b_tree.ads"
+       );
+
+   for Object_Dir use Components'Object_Dir;
+
+   package Compiler renames Components.Compiler;
+   package Binder   renames Components.Binder;
+   package Builder  renames Components.Builder;
+   package Linker   renames Components.Linker;
+
+end Components.Ada.Syntax_Analyzer;
+

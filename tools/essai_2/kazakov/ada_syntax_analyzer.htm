@@ -1,0 +1,2799 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML lang="en">
+<HEAD>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<TITLE>Ada syntax analyzer</TITLE>
+<meta http-equiv="Content-Style-Type" content="text/css">
+<meta http-equiv="Content-Type" content="text/html; charset=us-ascii">
+<META name="keywords" content="parser, Ada, Ada 2022, syntax tree, AST">
+<META name="Author" content="Dmitry Kazakov">
+<META name="Description" content="Ada syntax analyzer">
+</HEAD>
+<BODY bgcolor="#FFFFFF" link="#0000FF" vlink="#800080">
+<P align="center">
+<BIG><BIG><BIG><b>ADA SYNTAX ANALYZER</b></BIG></BIG><br>
+<EM>version 1.0</EM><BR>
+by Dmitry A. Kazakov</BIG><BR>
+(<A HREF="mailto:mailbox@dmitry-kazakov.de">mailbox@dmitry-kazakov.de</A>)<br>
+<a href="http://www.dmitry-kazakov.de"><img border="0" src="home.jpg" alt="[Home]" width="40" height="40"></a></p>
+<P>
+This library is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later 
+version. This library is distributed in the hope that it will be useful, but 
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A PARTICULAR PURPOSE. See the
+<a href="http://www.gnu.org/licenses/gpl.html">GNU General Public License</a>
+for more details. You should have received a copy of the GNU General Public 
+License along with this library; if not, write to the Free Software Foundation, 
+Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.</P>
+<P>
+As a special exception, if other files instantiate generics from this unit, or 
+you link this unit with other files to produce an executable, this unit does not 
+by itself cause the resulting executable to be covered by the GNU General Public 
+License. This exception does not however invalidate any other reasons why the 
+executable file might be covered by the GNU Public License.</P>
+<HR>
+<P align="left">
+The current version provides a full Ada 2022 syntax analyzer library. The 
+analyzer parses the source and creates the syntax tree and cross reference of 
+defining identifiers in the source. Both structures are allocated in an arena 
+pool storage and can be released as a whole. The code source can be file, stream 
+or a user-defined container implementing multi-line source interface. Unicode is 
+fully supported as well as Unicode identifiers normalization checks.</p>
+<P align="left">
+The package is based on
+<a href="https://www.dmitry-kazakov.de/ada/components.htm">Simple Components for 
+Ada</a> parsing facilities. The rest of library it is not used though included 
+in the sources.</p>
+<table border="0" cellspacing="0" cellpadding="0" style="border-top-width: 0px">
+	<tr>
+		<td style="border-top-style: none; border-top-width: medium" colspan="4">&nbsp;</td>
+		<td style="border-top-style: none; border-top-width: medium" align="right">
+		&nbsp;</td>
+		<td>&nbsp;</td>
+		<td align="center" colspan="2">ARM</td>
+		<td align="center" colspan="2">Intel</td>
+	</tr>
+	<tr>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:solid; border-bottom-width:1px" colspan="4"><b>Download Ada syntax analyzer</b></td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:solid; border-bottom-width:1px" align="right">
+		<b>Platform:</b></td>
+		<td>&nbsp;</td>
+		<td align="center">64-</td>
+		<td align="center">32-</td>
+		<td align="center">64-</td>
+		<td align="center">32bit</td>
+	</tr>
+	<tr>
+		<td style="border-bottom-style: none; border-bottom-width: medium">
+		<a name="Arch_packages"></a>Arch packages </td>
+		<td style="border-bottom-style: none; border-bottom-width: medium" align="center">
+		<img border="0" src="arch-logo.jpg" width="16" height="16" alt="Arch"></td>
+		<td style="border-bottom-style: none; border-bottom-width: medium">&nbsp;</td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style: none; border-bottom-width: medium" colspan="2">precompiled and packaged for 
+		pacman</td>
+		<td>&nbsp;</td>
+		<td align="right">
+		&nbsp;</td>
+		<td>
+		&nbsp;</td>
+		<td><a href="http://www.dmitry-kazakov.de/distributions/ada_syntax_analyzer_arch_x86_64.htm">
+		<img src="in.jpg" align=middle alt="[Download page]" width="29" height="29"></a></td>
+		<td>&nbsp;</td>
+	</tr>
+	<tr>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:none; border-bottom-width:medium">
+		<a name="fedora_packages"></a>Fedora packages </td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:none; border-bottom-width:medium" align="center">
+		<img border="0" src="fedora-logo.jpg" width="16" height="16" alt="fedora"></td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:none; border-bottom-width:medium">&nbsp;</td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:none; border-bottom-width:medium">precompiled
+		and packaged using RPM</td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:none; border-bottom-width:medium">&nbsp;</td>
+		<td>&nbsp;</td>
+		<td align="right">
+		<a href="http://www.dmitry-kazakov.de/distributions/ada-syntax-analyzer_fedora_aarch64.htm"><img src="in.jpg" align=middle alt="[Download page]" width="29" height="29"></a></td>
+		<td align="right">
+		<a href="http://www.dmitry-kazakov.de/distributions/ada-syntax-analyzer_fedora_armv7hl.htm"><img src="in.jpg" align=middle alt="[Download page]" width="29" height="29"></a></td>
+		<td align="center"><a href="http://www.dmitry-kazakov.de/distributions/ada-syntax-analyzer_fedora_x86_64.htm"><img src="in.jpg" align=middle alt="[Download page]" width="29" height="29"></a></td>
+		<td align="center"><a href="http://www.dmitry-kazakov.de/distributions/ada-syntax-analyzer_fedora_i686.htm"><img src="in.jpg" align=middle alt="[Download page]" width="29" height="29"></a></td>
+	</tr>
+	<tr>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:none; border-bottom-width:medium">
+		<a name="CentOS_packages"></a>CentOS packages </td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:none; border-bottom-width:medium" align="center">
+		<img border="0" src="centos-logo.jpg" width="16" height="16" alt="CentOS"></td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:none; border-bottom-width:medium">&nbsp;</td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:none; border-bottom-width:medium" colspan="2">
+		precompiled and packaged using RPM</td>
+		<td>&nbsp;</td>
+		<td align="right">&nbsp;</td>
+		<td align="right">&nbsp;</td>
+		<td align="center"><a href="http://www.dmitry-kazakov.de/distributions/centos/ada-syntax-analyzer_centos_x86_64.htm"><img src="in.jpg" align=middle alt="[Download page]" width="29" height="29"></a></td>
+		<td align="center"><a href="http://www.dmitry-kazakov.de/distributions/centos/ada-syntax-analyzer_centos_i686.htm"><img src="in.jpg" align=middle alt="[Download page]" width="29" height="29"></a></td>
+	</tr>
+	<tr>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:none; border-bottom-width:medium">
+		<a name="debian_packages"></a>Debian packages </td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:none; border-bottom-width:medium" align="center">
+		<img border="0" src="debian-logo.jpg" width="16" height="16" alt="Debian"></td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:none; border-bottom-width:medium">&nbsp;</td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style: none; border-bottom-width: medium" colspan="2">precompiled and packaged for dpkg</td>
+		<td>&nbsp;</td>
+		<td align="right"><a href="http://www.dmitry-kazakov.de/distributions/ada-syntax-analyzer_debian_aarch64.htm"><img src="in.jpg" align=middle alt="[Download page]" width="29" height="29"></a></td>
+		<td align="right"><a href="http://www.dmitry-kazakov.de/distributions/ada-syntax-analyzer_debian_armhf.htm"><img src="in.jpg" align=middle alt="[Download page]" width="29" height="29"></a></td>
+		<td align="center"><a href="http://www.dmitry-kazakov.de/distributions/ada-syntax-analyzer_debian_x86_64.htm"><img src="in.jpg" align=middle alt="[Download page]" width="29" height="29"></a></td>
+		<td align="center"><a href="http://www.dmitry-kazakov.de/distributions/ada-syntax-analyzer_debian_i686.htm">
+		<img src="in.jpg" align=middle alt="[Download page]" width="29" height="29"></a></td>
+	</tr>
+	<tr>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:none; border-bottom-width:medium">
+		<a name="ubuntu_packages"></a>Ubuntu packages </td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:none; border-bottom-width:medium" align="center">
+		<img border="0" src="ubuntu-logo.jpg" width="16" height="16" alt="Ubuntu"></td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style:none; border-bottom-width:medium">&nbsp;&nbsp;&nbsp;&nbsp; </td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style: none; border-bottom-width: medium" colspan="2">precompiled and packaged for dpkg</td>
+		<td>&nbsp;</td>
+		<td align="right">
+		<a href="http://www.dmitry-kazakov.de/distributions/ubuntu/ada-syntax-analyzer_ubuntu_aarch64.htm"><img src="in.jpg" align=middle alt="[Download page]" width="29" height="29"></a></td>
+		<td align="right">
+		<a href="http://www.dmitry-kazakov.de/distributions/ubuntu/ada_syntax_analyzer_ubuntu_armhf.htm"><img src="in.jpg" align=middle alt="[Download page]" width="29" height="29"></a></td>
+		<td align="center"><a href="http://www.dmitry-kazakov.de/distributions/ubuntu/ada-syntax-analyzer_ubuntu_x86_64.htm"><img src="in.jpg" align=middle alt="[Download page]" width="29" height="29"></a></td>
+		<td align="center"><a href="http://www.dmitry-kazakov.de/distributions/ubuntu/ada-syntax-analyzer_ubuntu_i686.htm"><img src="in.jpg" align=middle alt="[Download page]" width="29" height="29"></a></td>
+	</tr>
+	<tr>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style: solid; border-bottom-width: 1px" colspan="2">Source distribution (any platform)</td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style: solid; border-bottom-width: 1px">&nbsp;</td>
+		<td style="border-top-style: none; border-top-width: medium; border-bottom-style: solid; border-bottom-width: 1px" colspan="2">
+		<a href="http://www.dmitry-kazakov.de/ada/ada_syntax_analyzer_1_0.tgz">ada_syntax_analyzer_1_0.tgz</a>
+		(<b>tar</b> + <b>gzip</b>, Windows users may use WinZip)</td>
+		<td>&nbsp;</td>
+		<td align="center" colspan="4">
+		<a href="http://www.dmitry-kazakov.de/ada/ada_syntax_analyzer_1_0.tgz">
+<img src="download.jpg" align=middle alt="[Download]" width="29" height="29"></a></td>
+	</tr>
+</table>
+<P align="left">
+See also <a href="#changes_log">changes log</a>.</p>
+<hr>
+<P align="right">
+<A name="1"></A><A href="#5"><IMG src="index.gif" alt="[TOC]" width="29"
+    height="29"></A><A href="#1.1"><IMG src="next.gif" alt="[Next]" width="29"
+    height="29"></A></p>
+<H2>1. The Ada parser</H2>
+<p><a name="Parsers.Ada_Syntax_Analyzer"></a>The package 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="#Parsers.Ada_Syntax_Analyzer">Ada_Syntax_Analyzer</a> 
+provides an Ada syntax analyzer:</p>
+<blockquote>
+<p>
+<tt><font color="#0000FF"><a name="Parsers.Ada_Syntax_Analyzer.Ada_Program"></a>
+type </font>Ada_Program<br>
+&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Pool</b> : <font color="#0000FF">access </font>
+Root_Storage_Pool'Class;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Xref</b> : 
+<a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference_Ptr">Cross_Reference_Ptr</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; <font color="#0000FF">is new </font>
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Ada_Parser.Ada_Expression">
+Ada_Expression</a><font color="#0000FF"> with private</font>;</tt></p>
+</blockquote>
+<p>The type is derived from the Ada expression parser from
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Ada_Parser">
+Simple Components</a>. The discriminants are:</p>
+<ul>
+	<li><i>Pool</i> is the pool used to allocate the syntax tree and 
+	cross-reference. The pool is allocated by chunks which are freed as a whole;</li>
+	<li><i>Xref</i> is the cross-reference to fill up. When specified as
+	<font color="#0000FF">null</font> no cross-reference is created.</li>
+</ul>
+<p><a name="Parsers.Ada_Syntax_Analyzer.Parse"></a>The following operations are defined on the type:</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Parse<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+(&nbsp; <b>Context</b> : <font color="#0000FF">access</font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Ada_Program">Ada_Program</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Code</b>&nbsp;&nbsp;&nbsp; : 
+<font color="#0000FF">access</font> <a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Source.Source_Type">Source</a>'Class<span style="text-decoration: none">;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>File</b>&nbsp;&nbsp;&nbsp; 
+: </span>
+<a href="#Parsers.Ada_Syntax_Analyzer.Source_Description_Ptr">
+Source_Description_Ptr</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+)&nbsp; <font color="#0000FF">return</font>
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Token">Tokens</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Token.Argument_Token">Argument_Token</a>;</tt></p>
+</blockquote>
+<p>This function parses one compilation unit in the source <b>Code</b> and 
+advances the source to the first position following the unit. The result is 
+returned as the topmost node of the syntax tree allocated in the arena pool. 
+The cross-reference <b>Xref</b> if specified is updated with the new defining 
+identifiers declared across the unit and the contexts containing these 
+identifiers. <b>File</b> is the source file description to be used with defining 
+identifiers. It can be <font color="#0000FF">null</font> if only one file is 
+used. If multiple files are used the source file description is used to 
+distinguish them in the cross-reference.</p>
+<p>The Syntax_Error exception defined in the package
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a> 
+is propagated on syntax errors. Upon an error the source is left at the last 
+parsed position. The syntax error text contains the source primary source 
+location of the error at its end. For example:</p>
+<blockquote>
+<p><tt>
+'end if' is expected at 18:6..10</tt></p>
+</blockquote>
+<p>The location can be extracted from the text using the function
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source.Get_Location">
+Get_Location</a>. Upon failure the memory pool is cleared. The source can be any descendant of the type
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source">Multiline_Source</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Source.Source_Type">Source_Type</a>. 
+It can be a text file, string, stream or user-defined.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function </font>Get_Trace_File (<b>Context</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Ada_Program">Ada_Program</a>)<font color="#0000FF"><br>
+&nbsp;&nbsp; return </font>Ada.Text_IO.File_Access;</tt></p>
+</blockquote>
+<p>This function returns the file presently used for tracing. It is
+<font color="#0000FF">null</font> if tracing is inactive.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">procedure </font>Set_Trace_File<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Context</b> :
+<font color="#0000FF">in out</font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Ada_Program">Ada_Program</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>File</b>&nbsp;&nbsp;&nbsp; 
+: Ada.Text_IO.File_Access := <font color="#0000FF">null</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );</tt></p>
+</blockquote>
+<p>This procedure sets the trace file. When <font color="#0000FF">null</font> 
+tracing is deactivated.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF"><a name="Parsers.Ada_Syntax_Analyzer.Tree_Stub"></a>type</font> Tree_Stub (<b>Context</b> :
+<font color="#0000FF">access</font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Ada_Program">Ada_Program</a>'Class)
+<font color="#0000FF">is<br>
+&nbsp;&nbsp; new</font> Ada.Finalization.Limited_Controlled
+<font color="#0000FF">with private</font>;</tt></p>
+</blockquote>
+<p>An instance of this type marks the pool used by <b>Context</b>. When 
+finalized it frees all memory allocated there since initialization. </p>
+<p align="right">
+  <A name="1.1"></A><A href="#1"><IMG src="prev.gif" alt="[Back]" width="29"
+      height="29"></A><A href="#5"><IMG
+      src="index.gif" alt="[TOC]" width="29" height="29"></A><A
+      href="#1.2"><IMG src="next.gif" alt="[Next]" width="29" height="29"></A></p>
+<H3>1.1. Compilation contexts</H3>
+<p align="left">The following type is the base type of a context containing 
+defining identifiers (ARM <a href="ada-auth.org/standards/22rm/html/RM-3-1.html">
+3.1</a>):</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF"><a name="Parsers.Ada_Syntax_Analyzer.Compilation_Context">
+</a>type</font> Compilation_Context <font color="#0000FF">is 
+abstract new</font> <a href="#Parsers.Ada_Syntax_Analyzer.Declaration_Node">
+Declaration_Node</a> <font color="#0000FF">with record</font><br>
+&nbsp;&nbsp; Parent&nbsp;: 
+<a href="#Parsers.Ada_Syntax_Analyzer.Context_Location">Context_Location</a>;<br>
+<span style="text-decoration: none"><b>&nbsp;&nbsp; </b>File&nbsp;&nbsp;&nbsp;: </span>
+<a href="#Parsers.Ada_Syntax_Analyzer.Source_Description_Ptr">
+Source_Description_Ptr</a>;<br>
+&nbsp;&nbsp; Scope&nbsp;&nbsp;:  
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source">Multiline_Source</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source.Location">Location</a> := 
+Empty;<br>
+<font color="#0000FF">end record</font>;<br>
+<font color="#0000FF">
+<a name="Parsers.Ada_Syntax_Analyzer.Compilation_Context_Ptr"></a>type</font> 
+Compilation_Context_Ptr <font color="#0000FF">is<br>
+&nbsp;&nbsp; access constant </font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Compilation_Context">Compilation_Context</a>'Class;;</tt></p>
+</blockquote>
+<p>A compilation context:</p>
+<ul>
+	<li><i>Parent</i> is the location of the context in its parent. A library 
+	unit has no parent;</li>
+	<li><i>File</i> is the source description;</li>
+	<li><i>Scope</i> is the source location where defining identifiers declared 
+	in the context are visible.<br>
+&nbsp;<table border="0" cellspacing="0" cellpadding="0">
+		<tr>
+			<td>&nbsp;<tt><font color="#0000FF">package</font> T
+			<font color="#0000FF">is</font></tt></td>
+			<td style="border-bottom-style: none; border-bottom-width: medium">&nbsp;</td>
+			<td align="center">&nbsp;&nbsp; </td>
+			<td align="center">&nbsp;</td>
+		</tr>
+		<tr>
+			<td bgcolor="#FFFF99"><tt>
+&nbsp;&nbsp; I : Integer; <br>
+&nbsp;&nbsp; A : Float;<br>
+&nbsp;&nbsp; <font color="#0000FF">procedure</font> X</tt></td>
+			<td style="border-top-style: none; border-top-width: medium; border-bottom-style: none; border-bottom-width: medium" bgcolor="#FFFF99">&nbsp;</td>
+			<td align="center" bgcolor="#FFFF99">&nbsp;</td>
+			<td bgcolor="#FFFF99" align="center">&nbsp;</td>
+		</tr>
+		<tr>
+			<td bgcolor="#B8D3D1"><tt>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; 
+			J : Integer;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+			P : Float;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+			S : String</tt></td>
+			<td style="border-top-style: none; border-top-width: medium; border-bottom-style: none; border-bottom-width: medium" bgcolor="#B8D3D1">&nbsp;&nbsp;&nbsp;&nbsp; </td>
+			<td bgcolor="#B8D3D1" align="center"><i>Location</i><br>
+&nbsp;&nbsp; (<i>inherited</i>)&nbsp;&nbsp;&nbsp;</td>
+			<td bgcolor="#FFFF99" align="center">&nbsp; <i>Parent's location</i>&nbsp;&nbsp;&nbsp;
+			</td>
+		</tr>
+		<tr>
+			<td bgcolor="#FFDEBD">&nbsp;<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+			)&nbsp; <font color="#0000FF">is<br>
+			</font>&nbsp;&nbsp; <font color="#0000FF">begin<br>
+			</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; J := J + 1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; I := J;</tt></td>
+			<td style="border-top-style: none; border-top-width: medium; border-bottom-style: none; border-bottom-width: medium" bgcolor="#FFDEBD">&nbsp;</td>
+			<td bgcolor="#FFDEBD" align="center">&nbsp;<i>Scope</i> </td>
+			<td bgcolor="#FFFF99" align="center">&nbsp;</td>
+		</tr>
+		<tr>
+			<td bgcolor="#FFFF99"><tt>
+&nbsp;&nbsp; <font color="#0000FF">end</font> X;</tt></td>
+			<td style="border-top-style: none; border-top-width: medium; border-bottom-style: none; border-bottom-width: medium" bgcolor="#FFFF99">&nbsp;</td>
+			<td align="center" bgcolor="#FFFF99">&nbsp;</td>
+			<td align="center" bgcolor="#FFFF99">&nbsp;</td>
+		</tr>
+		<tr>
+			<td><tt>
+			<font color="#0000FF">end</font> T;</tt></td>
+			<td style="border-top-style: none; border-top-width: medium">&nbsp;</td>
+			<td align="center">&nbsp;</td>
+			<td align="center">&nbsp;</td>
+		</tr>
+	</table>
+	</li>
+</ul>
+<p>The operations to navigate contexts:</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get_Item<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Context</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Compilation_Context">Compilation_Context</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Index</b>&nbsp;&nbsp; 
+: Positive<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ) <font color="#0000FF">&nbsp;return </font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Declaration_Ptr">Declaration_Ptr</a><font color="#0000FF"> is abstract</font>;</tt></p>
+</blockquote>
+<p>This function returns the declaration node by its index. Nodes are enumerated 
+starting with 1. Constraint_Error is propagated when <b>Index</b> is wrong<b>.</b></p>
+<blockquote>
+<p><tt>
+<b>
+<font color="#0000FF">function</font> Get_Items_Number (Context</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Compilation_Context">Compilation_Context</a>)<br>
+&nbsp;&nbsp; <font color="#0000FF">return </font>Natural <font color="#0000FF"> is abstract</font>;</tt></p>
+</blockquote>
+<p>This function returns the number of declaration nodes in the context.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF"><a name="Parsers.Ada_Syntax_Analyzer.Context_Location">
+</a>type</font> Context_Location <font color="#0000FF">is record<br>
+</font>&nbsp;&nbsp; Context :
+<a href="#Parsers.Ada_Syntax_Analyzer.Compilation_Context_Ptr">
+Compilation_Context_Ptr</a>;<br>
+&nbsp;&nbsp; After&nbsp;&nbsp; : Natural := <font color="#800000">0</font>;<br>
+<font color="#0000FF">end record</font>;</tt></p>
+</blockquote>
+<p>Values of this type indicates a declaration item:</p>
+<ul>
+	<li><i>Context</i> is the context where the item is declared.</li>
+	<li><i>After</i> is the position after the item.</li>
+</ul>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Is_Library_Unit (<b>Context</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Context_Location">Context_Location</a>)
+<font color="#0000FF">return</font> Boolean;</tt></p>
+</blockquote>
+<p>This function returns <i><font color="#800000">true</font></i> if <b>Context</b> 
+indicates an item declared in a library unit context.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get (<b>Context</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Context_Location">Context_Location</a>)
+<font color="#0000FF">return</font> 
+<a href="#Parsers.Ada_Syntax_Analyzer.Declaration_Ptr">Declaration_Ptr</a>;</tt></p>
+</blockquote>
+<p>This function returns the declaration node specified by <b>Context</b>. 
+Constraint_Error is propagated on errors.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">
+<a name="Parsers.Ada_Syntax_Analyzer.Context_Location_Sets"></a>package</font> 
+Context_Location_Sets <font color="#0000FF">is<br>
+&nbsp;&nbsp; new</font> Generic_Set (Context_Location, (<font color="#0000FF">null</font>,
+<font color="#800000">0</font>));</tt></p>
+</blockquote>
+<p>This instantiation provides sets of context locations.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">
+function </font>Precedes (<b>Left</b>, <b>Right</b> : <a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source.Location">Location</a>)
+<font color="#0000FF">
+return </font>Boolean;</tt></p>
+</blockquote>
+<p>This function orders source locations so that a location precedes another if 
+it indicates a source interval preceding than the later or else contains it.</p>
+<p align="right">
+  <A name="1.2"></A><A href="#1.1"><IMG src="prev.gif" alt="[Back]" width="29"
+      height="29"></A><A href="#5"><IMG
+      src="index.gif" alt="[TOC]" width="29" height="29"></A><A
+      href="#1.3"><IMG src="next.gif" alt="[Next]" width="29" height="29"></A></p>
+<H3>1.2. Defining identifiers</H3>
+<p>The defining identifier is declared as follows:</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">type</font> Named_Term_Ptr <font color="#0000FF">is access 
+constant</font> Named_Term'Class;<br>
+<font color="#0000FF"><a name="Parsers.Ada_Syntax_Analyzer.Defining_Identifier">
+</a>type</font> Defining_Identifier <font color="#0000FF">is record</font><br>
+&nbsp;&nbsp; Declared : <a href="#Parsers.Ada_Syntax_Analyzer.Context_Location">
+Context_Location</a>;<br>
+&nbsp;&nbsp; Outer&nbsp;&nbsp;&nbsp; :
+<a href="#Parsers.Ada_Syntax_Analyzer.Program_Node_Ptr">Program_Node_Ptr</a>;<br>
+&nbsp;&nbsp; Name&nbsp;&nbsp;&nbsp;&nbsp; : Named_Term_Ptr;<br>
+&nbsp;&nbsp; Term&nbsp;&nbsp;&nbsp;&nbsp; :
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Token">Tokens</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Token.Argument_Token">Argument_Token</a>;<br>
+&nbsp;&nbsp; File&nbsp;&nbsp;&nbsp;&nbsp; :
+<a href="#Parsers.Ada_Syntax_Analyzer.Source_Description_Ptr">
+Source_Description_Ptr</a>;<br>
+&nbsp;&nbsp; Next&nbsp;&nbsp;&nbsp;&nbsp; : 
+<a href="#Parsers.Ada_Syntax_Analyzer.Defining_Identifier_Ptr">Defining_Identifier_Ptr</a>;<br>
+<font color="#0000FF">end record</font>;<br>
+<a name="Parsers.Ada_Syntax_Analyzer.Defining_Identifier_Ptr"></a>
+<font color="#0000FF">type</font> Defining_Identifier_Ptr <font color="#0000FF">
+is access constant</font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Defining_Identifier">Defining_Identifier</a>;</tt></p>
+</blockquote>
+<p>This type represents either a defining identifier or a defining symbol:</p>
+<ul>
+	<li><i>Declared</i> is the location in a context;</li>
+	<li><i>Outer</i> is the node that contains the identifier declaration;</li>
+	<li><i>Name</i> is a direct pointer to the name of. Name,Value is the string 
+	with the name of the identifier or the operator name like '+' etc;</li>
+	<li><i>Term</i> is the expression terms. It is either Identifier or 
+	String_Literal.</li>
+	<li><i>File</i> is the source description, e.g. file name etc.</li>
+	<li><i>Next</i> points to the next defining identifier in the same context. 
+	All identifiers are linked in the list of.</li>
+</ul>
+<blockquote>
+<p><tt>
+<font color="#0000FF">type</font> Defining_Identifier_Array
+<font color="#0000FF">is<br>
+&nbsp;&nbsp; array</font> (Positive <font color="#0000FF">range</font> &lt;&gt;)
+<font color="#0000FF">of aliased</font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Defining_Identifier">Defining_Identifier</a>;</tt></p>
+<p><tt><font color="#0000FF">
+<a name="Parsers.Ada_Syntax_Analyzer.Source_Description"></a>type </font>
+Source_Description<font color="#0000FF"> is abstract tagged null record</font>;<font color="#0000FF"><br>
+<a name="Parsers.Ada_Syntax_Analyzer.Source_Description_Ptr"></a>type </font>
+Source_Description_Ptr<font color="#0000FF"> is<br>
+&nbsp;&nbsp; access constant </font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Source_Description">Source_Description'</a>Class;</tt></p>
+</blockquote>
+<p>The source description can be used with multiple sources to indicate which 
+source the identifier was declared in. The following operations are defined on 
+source descriptions:</p>
+<blockquote>
+<p><tt>Source_Description_Ptr<font color="#0000FF"> is<br>
+&nbsp;&nbsp; access constant </font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Source_Description">Source_Description'</a>Class;</tt></p>
+</blockquote>
+<p>The source descriptio</p>
+<p align="right">
+  <A name="1.3"></A><A href="#1.2"><IMG src="prev.gif" alt="[Back]" width="29"
+      height="29"></A><A href="#5"><IMG
+      src="index.gif" alt="[TOC]" width="29" height="29"></A><A
+      href="#1.4"><IMG src="next.gif" alt="[Next]" width="29" height="29"></A></p>
+<H3>1.3. Cross-reference</H3>
+<blockquote>
+<p><tt>
+<font color="#0000FF"><a name="Parsers.Ada_Syntax_Analyzer.Cross_Reference"></a>
+type</font> Cross_Reference<br>
+&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Pool</b> : <font color="#0000FF">access</font> 
+Root_Storage_Pool'Class<br>
+&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; <font color="#0000FF">is new </font>
+Ada.Finalization.Limited_Controlled <font color="#0000FF">with private</font>;<br>
+<font color="#0000FF"><a name="Parsers.Ada_Syntax_Analyzer.Cross_Reference_Ptr">
+</a>type</font> Cross_Reference_Ptr <font color="#0000FF">is 
+access all</font> <a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference">Cross_Reference</a>'Class;</tt></p>
+</blockquote>
+<p>This type represents a cross-reference of the items declared in the parsed 
+units. The discriminant <i>Pool</i> can be the same storage pool as the pool 
+used by the parser. Items added to the reference are allocated after the pool 
+mark. When the parser object is finalized or when the
+<a href="#Parsers.Ada_Syntax_Analyzer.Tree_Stub">stub</a> is finalized 
+Program_Error is propagated if the items from a still existing cross-reference 
+are deallocated in the result.</p>
+<p>The following operations are defined on cross-reference:</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF"><a name="Parsers.Ada_Syntax_Analyzer.Find"></a>function</font> Find<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Xref</b>&nbsp;&nbsp;&nbsp;&nbsp; 
+: <a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference">Cross_Reference</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Name</b>&nbsp;&nbsp;&nbsp;&nbsp; 
+: String;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Location</b> 
+: 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source">Multiline_Source</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source.Location">Location</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>File</b>&nbsp;&nbsp;&nbsp;&nbsp; 
+: <a href="#Parsers.Ada_Syntax_Analyzer.Source_Description_Ptr">
+Source_Description_Ptr</a> := <font color="#0000FF">null</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; <font color="#0000FF">
+return</font> <a href="#Parsers.Ada_Syntax_Analyzer.Context_Location_Sets">
+Context_Location_Sets</a>.Set;</tt></p>
+</blockquote>
+<p>This function searches for the name in the cross-reference <b>Xref</b>. <b>
+Name</b> is the name to search for. <b>Location</b> is the source location to 
+start at. The result the set of defining identifier locations with the names 
+matching <b>Name</b>. The set contains only identifiers with the visibility 
+scope containing <b>Location</b> in <b>File</b>. The result is a set of potential candidates to 
+resolve <b>Name</b> ignoring the use clauses.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Xref</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference">Cross_Reference</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Name</b> : 
+String<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; <font color="#0000FF">
+return</font> <a href="#Parsers.Ada_Syntax_Analyzer.Identifier_Entry">Identifier_Entry</a>;</tt></p>
+</blockquote>
+<p>This function returns the entry corresponding <b>Name</b>. The result is 
+No_Identifier if no entry is found.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Xref</b>&nbsp;&nbsp;&nbsp;&nbsp; 
+:
+<a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference">Cross_Reference</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Location</b> 
+: 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source">Multiline_Source</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source.Location">Location</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>File</b>&nbsp;&nbsp;&nbsp;&nbsp; 
+: <a href="#Parsers.Ada_Syntax_Analyzer.Source_Description_Ptr">
+Source_Description_Ptr</a> := <font color="#0000FF">null</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; <font color="#0000FF">
+return</font> <a href="#Parsers.Ada_Syntax_Analyzer.Context_Entry">Context_Entry</a>;</tt></p>
+</blockquote>
+<p>This function returns the context entry corresponding to the narrowest scope 
+containing <b>Location</b> in <b>File</b>. The result is No_Entry is no such entry exists.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get_First<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Xref</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference">Cross_Reference</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; <font color="#0000FF">
+return</font> <a href="#Parsers.Ada_Syntax_Analyzer.Identifier_Entry">Identifier_Entry</a>;</tt></p>
+</blockquote>
+<p>This function returns the first identifier entry in the reference. The result 
+is No_Identifier if the reference is empty.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get_First<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Xref</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference">Cross_Reference</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; <font color="#0000FF">
+return</font> <a href="#Parsers.Ada_Syntax_Analyzer.Context_Entry">Context_Entry</a>;</tt></p>
+</blockquote>
+<p>This function returns the first context entry in the reference. The result is 
+No_Context if the reference is empty.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get_Last<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Xref</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference">Cross_Reference</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; <font color="#0000FF">
+return</font> <a href="#Parsers.Ada_Syntax_Analyzer.Identifier_Entry">Identifier_Entry</a>;</tt></p>
+</blockquote>
+<p>This function returns the last identifier entry in the reference. The result 
+is No_Identifier if the reference is empty.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get_Last<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Xref</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference">Cross_Reference</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; <font color="#0000FF">
+return</font> <a href="#Parsers.Ada_Syntax_Analyzer.Context_Entry">Context_Entry</a>;</tt></p>
+</blockquote>
+<p>This function returns the last context entry in the reference. The result is 
+No_Context if the reference is empty.</p>
+<p align="right">
+  <A name="1.4"></A><A href="#1.3"><IMG src="prev.gif" alt="[Back]" width="29"
+      height="29"></A><A href="#5"><IMG
+      src="index.gif" alt="[TOC]" width="29" height="29"></A><A
+      href="#1.5"><IMG src="next.gif" alt="[Next]" width="29" height="29"></A></p>
+<H3>1.4. Identifier entries</H3>
+<blockquote>
+<p><tt>
+<font color="#0000FF"><a name="Parsers.Ada_Syntax_Analyzer.Identifier_Entry">
+</a>type</font> Identifier_Entry <font color="#0000FF">is private</font>;<br>
+No_Identifier : <font color="#0000FF">constant</font> 
+<a href="#Parsers.Ada_Syntax_Analyzer.Identifier_Entry">Identifier_Entry</a>;</tt></p>
+</blockquote>
+<p>This type represents an entry in the cross-reference corresponding a name. All 
+items in an entry are defining identifiers having this name.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get_First (<b>Item</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Identifier_Entry">Identifier_Entry</a>)<br>
+&nbsp;&nbsp; <font color="#0000FF">return</font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Defining_Identifier_Ptr">
+Defining_Identifier_Ptr</a>;</tt></p>
+</blockquote>
+<p>This function returns the first defining identifier in the entry <b>Item</b>. 
+Constraint_Error is propagated if <b>Item</b> is No_Identifier.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get_Identifiers_Number (<b>Item</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Identifier_Entry">Identifier_Entry</a>)<br>
+<font color="#0000FF">&nbsp;&nbsp; return</font> Positive;</tt></p>
+</blockquote>
+<p>This function returns the number of defining identifiers in the entry <b>Item</b>. 
+The result is zero if <b>Item</b> is No_Identifier.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get_Last (<b>Item</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Identifier_Entry">Identifier_Entry</a>)<br>
+<font color="#0000FF">&nbsp;&nbsp; return</font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Defining_Identifier_Ptr">
+Defining_Identifier_Ptr</a>;</tt></p>
+</blockquote>
+<p>This function returns the last defining identifiers in the entry <b>Item</b>. 
+Constraint_Error is propagated if <b>Item</b> is No_Identifier.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get_Name (<b>Item</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Identifier_Entry">Identifier_Entry</a>)<font color="#0000FF"> 
+return</font> String;</tt></p>
+</blockquote>
+<p>This function returns the name the entry <b>Item</b> corresponds to. 
+Constraint_Error is propagated if <b>Item</b> is No_Identifier.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get_Next (<b>Item</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Identifier_Entry">Identifier_Entry</a>)<font color="#0000FF"> 
+return</font> <a href="#Parsers.Ada_Syntax_Analyzer.Identifier_Entry">
+Identifier_Entry</a>;</tt></p>
+</blockquote>
+<p>This function returns the next entry to <b>Item</b> in the cross-reference. 
+The result is No_Identifier if there is none or if <b>Item</b> is No_Identifier.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get_Previous (<b>Item</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Identifier_Entry">Identifier_Entry</a>)<font color="#0000FF"> 
+return</font> <a href="#Parsers.Ada_Syntax_Analyzer.Identifier_Entry">
+Identifier_Entry</a>;</tt></p>
+</blockquote>
+<p>This function returns the previous entry to <b>Item</b> in the 
+cross-reference. The result is No_Identifier if there is none or if <b>Item</b> 
+is No_Identifier.</p>
+<p align="right">
+  <A name="1.5"></A><A href="#1.4"><IMG src="prev.gif" alt="[Back]" width="29"
+      height="29"></A><A href="#5"><IMG
+      src="index.gif" alt="[TOC]" width="29" height="29"></A><a href="#2"><IMG src="next.gif" alt="[Next]" width="29" height="29"></a></p>
+<H3>1.5. Context entries</H3>
+<blockquote>
+<p><tt>
+<font color="#0000FF"><a name="Parsers.Ada_Syntax_Analyzer.Context_Entry"></a>type</font> 
+Context_Entry <font color="#0000FF">is private</font>;<br>
+No_Context : <font color="#0000FF">constant</font> 
+<a href="#Parsers.Ada_Syntax_Analyzer.Context_Entry">Context_Entry</a>;</tt></p>
+</blockquote>
+<p>This type represents an entry in the cross-reference corresponding a context. 
+That is a declarative region and its scope. Entries are ordered in the textual 
+order of the scopes where context declarations are directly visible. Note the 
+difference between the location of declarations and the scope where these become 
+visible.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get_Context (<b>Item</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Context_Entry">Context_Entry</a>)<br>
+<font color="#0000FF">&nbsp;&nbsp; return</font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Compilation_Context_Ptr">
+Compilation_Context_Ptr</a>;</tt></p>
+</blockquote>
+<p>This function returns the context corresponding to the entry <b>Item</b>. 
+Constraint_Error is propagated if <b>Item</b> is No_Context.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF"><a name="Parsers.Ada_Syntax_Analyzer.Get_Location"></a>function</font> Get_Location (<b>Item</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Context_Entry">Context_Entry</a>)<font color="#0000FF"><br>
+&nbsp;&nbsp; return</font> 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source">Multiline_Source</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source.Location">Location</a>;</tt></p>
+</blockquote>
+<p>This function returns the location in the source where context corresponding 
+to entry <b>Item</b> is directly visible. It may or may not include the 
+declaration of the context. For example parameter profile declarations are not 
+visible inside the profile. Constraint_Error is propagated if <b>Item</b> is 
+No_Context. See also <a href="#Parsers.Ada_Syntax_Analyzer.Get_Scope">Get_Scope</a> 
+which also returns the source description.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get_Next (<b>Item</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Context_Entry">Context_Entry</a>)<font color="#0000FF"> 
+return</font> <a href="#Parsers.Ada_Syntax_Analyzer.Context_Entry">Context_Entry</a>;</tt></p>
+</blockquote>
+<p>This function returns the next entry to <b>Item</b> in the cross-reference. 
+The result is No_Identifier if there is none or if <b>Item</b> is No_Context.</p>
+<blockquote>
+<p><tt>
+<font color="#0000FF">function</font> Get_Previous (<b>Item</b> :
+<a href="#Parsers.Ada_Syntax_Analyzer.Context_Entry">Context_Entry</a>)<font color="#0000FF"> 
+return</font> <a href="#Parsers.Ada_Syntax_Analyzer.Context_Entry">Context_Entry</a>;</tt></p>
+</blockquote>
+<p>This function returns the previous entry to <b>Item</b> in the 
+cross-reference. The result is No_Identifier if there is none or if <b>Item</b> 
+is No_Context.</p>
+
+<blockquote>
+<p><tt>
+<font color="#0000FF"><a name="Parsers.Ada_Syntax_Analyzer.Get_Scope"></a>
+procedure</font> Get_Scope<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (<b>&nbsp; Item</b>&nbsp;&nbsp;&nbsp;&nbsp; :
+<a href="#Parsers.Ada_Syntax_Analyzer.Context_Entry">Context_Entry</a><font color="#0000FF">;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </font>
+<b>File</b>&nbsp;&nbsp;&nbsp;&nbsp; : <font color="#0000FF">out</font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Source_Description_Ptr">
+Source_Description_Ptr</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>
+Location</b> : <font color="#0000FF"> 
+out </font> 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source">Multiline_Source</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source.Location">Location</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );</tt></p>
+</blockquote>
+<p>This procedure returns the location and source description in the source where context corresponding 
+to the entry <b>Item</b> is directly visible. It may or may not include the 
+declaration of the context. For example parameter profile identifiers are not 
+visible inside the profile itself. Constraint_Error is propagated if <b>Item</b> is 
+No_Context.</p>
+
+<hr><p align="right">
+  <A name="2"></A><a href="#1.5"><IMG src="prev.gif" alt="[Back]" width="29"
+      height="29"></a><A href="#5"><IMG
+      src="index.gif" alt="[TOC]" width="29" height="29"></A><a href="#2.1"><IMG src="next.gif" alt="[Next]" width="29" height="29"></a></p>
+<H2>2. The syntax tree</H2>
+<p>The syntax tree nodes are derived from
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Ada_Parser">Ada expression</a> nodes:</p>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Program_Node"></a>type</font> 
+	Program_Node <font color="#0000FF">is abstract new</font>
+	<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Ada_Parser.Node">
+	Node</a> <font color="#0000FF">with null record</font>;<br>
+	<font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Program_Node_Ptr"></a>type</font> 
+	Program_Node_Ptr <font color="#0000FF">is<br>
+&nbsp;&nbsp; access constant</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Program_Node">Program_Node</a>'Class;</tt></p>
+</blockquote>
+<p>A whole compilation unit is a single tree node.</p>
+<p>All text internally are kept as Ada strings encoded in UTF-8.</p>
+<blockquote>
+  <p><tt><font color="#0000FF">function</font> Get_Class (Item :
+	<a href="#Parsers.Ada_Syntax_Analyzer.Program_Node">Program_Node</a>)<br>
+&nbsp;&nbsp; <font color="#0000FF">return</font> Program_Node_Class
+	<font color="#0000FF">is abstract</font>;</tt></p>
+</blockquote>
+<p>The function returns the enumeration type value corresponding to the program 
+node. It can be used to avoid explicit tag testing:</p>
+<blockquote>
+  <p><tt><font color="#0000FF">type</font> Program_Node_Class is<br>
+&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; Abort_Statement_Node,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Accept_Statement_Node,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With_Clause_Node<br>
+&nbsp;&nbsp;&nbsp;&nbsp; );</tt></p>
+</blockquote>
+<p align="right">
+  <a href="#1.5" name="2.1"></a><a href="#2"><IMG src="prev.gif" alt="[Back]" width="29"
+      height="29"></a><a href="#5"><IMG
+      src="index.gif" alt="[TOC]" width="29" height="29"></a><a href="#2.2"><IMG src="next.gif" alt="[Next]" width="29" height="29"></a></p>
+<H3>2.1. Declaration nodes</H3>
+<p>All declaration nodes are descendants of
+<a href="#Parsers.Ada_Syntax_Analyzer.Declaration_Node">Declaration_Node</a>:</p>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Declaration_Node"></a>type</font> 
+	Declaration_Node <font color="#0000FF">is abstract new</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Program_Node">Program_Node</a>
+	<font color="#0000FF">with record<br>
+&nbsp;&nbsp; </font>Location : 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source">Multiline_Source</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source.Location">Location</a>;<br>
+	<font color="#0000FF">end record</font>;<font color="#0000FF"><br>
+	<a name="Parsers.Ada_Syntax_Analyzer.Declaration_Ptr"></a>type </font>
+	Declaration_Ptr<font color="#0000FF"> is access constant </font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declaration_Node">Declaration_Node</a>'Class;</tt></p>
+</blockquote>
+<p>This type is the base type of all declaration nodes.</p>
+<H4><a name="2.1.1"></a>2.1.1. Common declaration types</H4>
+<p><a name="Parsers.Ada_Syntax_Analyzer.Declarations"></a>The child package 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="#Parsers.Ada_Syntax_Analyzer">Ada_Syntax_Analyzer</a>.<a href="#Parsers.Ada_Syntax_Analyzer.Declarations">Declarations</a> 
+provides basic types used in declaration nodes.</p>
+<blockquote>
+<p><tt><font color="#0000FF">
+<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Compilation_Context_Type"></a>type</font> 
+Compilation_Context_Type is<br>
+&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; Code_Block_Context,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Generic_Formal_Parameters_Context,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Library_Unit_Context,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Package_Interface_Context,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Package_Private_Context,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Protected_Interface_Context,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Protected_Private_Context,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Protected_Body_Context,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Record_Component_Context,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Task_Interface_Context,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Task_Private_Context<br>
+&nbsp;&nbsp;&nbsp;&nbsp; );</tt></p>
+</blockquote>
+<span style="font-weight: 400">This enumeration type specifies the type of a 
+declaration context::</span><blockquote>
+	<table border="0" cellspacing="0" cellpadding="0">
+		<tr>
+			<td valign="top"><tt><font color="#0000FF">declare<br>
+			</font>&nbsp;&nbsp; &lt;<i>Code_Block_Context</i>&gt;<br>
+			<font color="#0000FF">begin</font><br>
+&nbsp;&nbsp; ...<br>
+			<font color="#0000FF">end</font>;</tt></td>
+			<td valign="top">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			</td>
+			<td valign="top"><tt><i>&lt;Library_Unit_Context&gt;</i><font color="#0000FF"><br>
+			generic<br>
+			</font>&nbsp;&nbsp; &lt;<i>Generic_Formal_Parameters_Context</i>&gt;<br>
+			<font color="#0000FF">package</font> P<br>
+&nbsp;&nbsp; &lt;<i>Package_Interface_Context</i>&gt;<br>
+			<font color="#0000FF">private<br>
+&nbsp;&nbsp; </font>&lt;<i>Package_Private_Context</i>&gt;<br>
+			<font color="#0000FF">end</font> P;</tt></td>
+		</tr>
+		<tr>
+			<td valign="top">&nbsp;</td>
+			<td valign="top">&nbsp;</td>
+			<td valign="top">&nbsp;</td>
+		</tr>
+		<tr>
+			<td valign="top"><tt><font color="#0000FF">protected type </font>P<font color="#0000FF"> 
+			is<br>
+&nbsp;&nbsp; </font>&lt;<i>Protected_Interface_Context</i>&gt;<font color="#0000FF"><br>
+			private<br>
+&nbsp;&nbsp; </font>&lt;<i>Protected_Private_Context</i>&gt;<font color="#0000FF"><br>
+			end</font> P; </tt></td>
+			<td valign="top">&nbsp;</td>
+			<td valign="top"><tt><font color="#0000FF">protected body </font>P<font color="#0000FF"> 
+			is<br>
+&nbsp;&nbsp; </font>&lt;<i>Protected_Body_Context</i>&gt;<br>
+			<font color="#0000FF">end</font> P;</tt></td>
+		</tr>
+		<tr>
+			<td valign="top">&nbsp;</td>
+			<td valign="top">&nbsp;</td>
+			<td valign="top">&nbsp;</td>
+		</tr>
+		<tr>
+			<td valign="top"><tt><font color="#0000FF">type </font>T<font color="#0000FF"> 
+			is record<br>
+&nbsp;&nbsp; </font>&lt;<i>Record_Component_Context</i>&gt;<font color="#0000FF"><br>
+			end record</font>;</tt></td>
+			<td valign="top">&nbsp;</td>
+			<td valign="top"><tt><font color="#0000FF">task type T is<br>
+&nbsp;&nbsp; </font>&lt;<i>Task_Interface_Context</i>&gt;<font color="#0000FF"><br>
+			private<br>
+&nbsp;&nbsp; </font>&lt;<i>Task_Private_Context</i>&gt;<font color="#0000FF"><br>
+			end</font> P;</tt></td>
+		</tr>
+	</table>
+</blockquote>
+<blockquote>
+  <p><tt><font color="#0000FF">function </font>Image (<b>Item</b> : 
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Compilation_Context_Type">
+	Compilation_Context_Type</a>)<font color="#0000FF"> return </font>String;</tt></p>
+</blockquote>
+<p>
+<span style="font-weight: 400">The declaration context node.</span></p>
+<blockquote>
+<p><tt><font color="#0000FF">
+<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Declaration_Context"></a>type</font>  
+Declaration_Context (Kind_Of :
+<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Compilation_Context_Type">
+Compilation_Context_Type</a>) <font color="#0000FF">is<br>
+&nbsp;&nbsp; new</font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Compilation_Context">Compilation_Context</a>
+<font color="#0000FF">with<br>
+record</font><br>
+&nbsp;&nbsp; Declarations&nbsp;&nbsp;&nbsp; :
+<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Declaration_Ptr_Array_Ptr">
+Declaration_Ptr_Array_Ptr</a>;<br>
+&nbsp;&nbsp; Last_Use_Clause :
+<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Use_Clause_Ptr">
+Use_Clause_Ptr</a>;<br>
+<font color="#0000FF">end record</font>;<br>
+<font color="#0000FF">type</font> Declaration_Context_Ptr <font color="#0000FF">
+is access constant</font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Declaration_Context">
+Declaration_Context</a>;</tt></p>
+</blockquote>
+<p>The declaration context contains a list of declarations:</p>
+<blockquote>
+<p><tt><font color="#0000FF">
+<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Declaration_Ptr_Array"></a>
+type</font> Declaration_Ptr_Array <font color="#0000FF">is<br>
+&nbsp;&nbsp; array</font> (Positive range &lt;&gt;) <font color="#0000FF">of</font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Declaration_Ptr">Declaration_Ptr</a>;<br>
+<font color="#0000FF">
+<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Declaration_Ptr_Array_Ptr">
+</a>type</font> Declaration_Ptr_Array_Ptr <font color="#0000FF">is<br>
+&nbsp;&nbsp; access constant</font> Declaration_Ptr_Array;</tt></p>
+</blockquote>
+<p>and the list of use clauses inside:</p>
+<blockquote>
+<p><tt><font color="#0000FF">
+<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Use_Clause"></a>type</font> 
+Use_Clause <font color="#0000FF">is abstract new</font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Context_Clause">
+Context_Clause</a> <font color="#0000FF">with record</font><br>
+&nbsp;&nbsp; Location : <a href="#Parsers.Ada_Syntax_Analyzer.Context_Location">
+Context_Location</a>;<br>
+&nbsp;&nbsp; Previous :
+<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Use_Clause_Ptr">
+Use_Clause_Ptr</a>;<br>
+<font color="#0000FF">end record</font>;<br>
+<font color="#0000FF">
+<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Use_Clause_Ptr"></a>type</font> 
+Use_Clause_Ptr <font color="#0000FF">is access constant</font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Use_Clause">Use_Clause</a>'Class;</tt></p>
+</blockquote>
+<p>The use clauses are linked inside the context in order to simplify resolution 
+of names according to visibility.</p>
+<blockquote>
+<p><tt><font color="#0000FF">
+<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Context_Clause"></a>type</font> 
+Context_Clause (Length : Positive) <font color="#0000FF">is<br>
+&nbsp;&nbsp; abstract new</font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Declaration_Node">Declaration_Node</a>
+<font color="#0000FF">with<br>
+record</font><br>
+&nbsp;&nbsp; List : 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Ada_Parser.Argument_List">Argument_List</a> (1..Length);<br>
+<font color="#0000FF">end record</font>;</tt></p>
+</blockquote>
+<p>The context clause is the base type of with-, use- and use-type clause nodes. 
+It contains list of nodes each represents a name.</p>
+<H4><a name="2.1.2"></a>2.1.2. Formal generic parameter nodes</H4>
+<p><a name="Parsers.Ada_Syntax_Analyzer.Declarations.Formal_Parameters"></a>The 
+child package 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="#Parsers.Ada_Syntax_Analyzer">Ada_Syntax_Analyzer</a>.<a href="#Parsers.Ada_Syntax_Analyzer.Declarations">Declarations</a>.<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Formal_Parameters">Formal_Parameters</a> 
+provides declaration of nodes used for generic formal parameters.</p>
+<blockquote>
+<p><tt><font color="#0000FF">type</font> Formal_Parameter <font color="#0000FF">
+is abstract new</font> <a href="#Parsers.Ada_Syntax_Analyzer.Declaration_Node">
+Declaration_Node</a> <font color="#0000FF">with record</font><br>
+&nbsp;&nbsp; Name : <font color="#0000FF">aliased</font>
+<a href="#Parsers.Ada_Syntax_Analyzer.Defining_Identifier">Defining_Identifier</a>;<br>
+<font color="#0000FF">end record</font>;</tt></p>
+</blockquote>
+<p>This is the base type of all formal parameters. The node types declared in 
+the package:</p>
+<ul>
+	<li>Formal_Access_Type_Parameter</li>
+	<li>Formal_Array_Type_Parameter</li>
+	<li>Formal_Derived_Type_Parameter</li>
+	<li>Formal_Function_Parameter</li>
+	<li>Formal_Incomplete_Type_Parameter</li>
+	<li>Formal_Interface_Type_Parameter</li>
+	<li>Formal_Package_Parameter</li>
+	<li>Formal_Private_Type_Parameter</li>
+	<li>Formal_Procedure_Parameter</li>
+	<li>Formal_Scalar_Type_Parameter</li>
+</ul>
+
+<H4><a name="2.1.3"></a>2.1.3. Specification nodes</H4>
+<p><a name="Parsers.Ada_Syntax_Analyzer.Declarations.Specifications"></a>The 
+child package 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="#Parsers.Ada_Syntax_Analyzer">Ada_Syntax_Analyzer</a>.<a href="#Parsers.Ada_Syntax_Analyzer.Declarations">Declarations</a>.<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications">Specifications</a> 
+provides declaration of nodes used for specifications.</p>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Mode_Type">
+	</a>type</font> Mode_Type<font color="#0000FF"> is</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; Inout_Mode,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<font color="#008000">-- in out Sybtype_Mark</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Out_Mode,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<font color="#008000">-- out Sybtype_Mark</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; In_Mode,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<font color="#008000">-- in Sybtype_Mark</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Access_To_All,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<font color="#008000">-- access all</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Access_To_Constant,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<font color="#008000">-- access constant</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Access_To_Variable,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<font color="#008000">-- access</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Access_To_Procedure,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<font color="#008000">-- access procedure</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Access_To_Protected_Procedure,
+	<font color="#008000">-- access protected procedure</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Access_To_Function,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<font color="#008000">-- access function</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Access_To_Protected_Function,&nbsp;
+	<font color="#008000">-- access protected function</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Object_Mode,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<font color="#008000">-- Subtype_Indication</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Array_Mode,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<font color="#008000">-- array</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Constant_Mode&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<font color="#008000">-- &lt;number&gt;<br>
+	</font>&nbsp;&nbsp;&nbsp;&nbsp; );<br>
+	<font color="#0000FF">subtype</font> Parameter_Mode <font color="#0000FF">is</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Mode_Type">
+	Mode_Type</a><br>
+&nbsp;&nbsp; <font color="#0000FF">range</font> 
+	Inout_Mode..Access_To_Protected_Function;<br>
+	<font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Access_Mode">
+	</a>subtype</font> Access_Mode <font color="#0000FF">is</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Mode_Type">
+	Mode_Type</a><br>
+&nbsp;&nbsp; <font color="#0000FF">range</font> 
+	Access_To_All..Access_To_Protected_Function;<br>
+	<font color="#0000FF">subtype</font> Access_To_Mode_Type
+	<font color="#0000FF">is</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Mode_Type">
+	Mode_Type</a><br>
+&nbsp;&nbsp; <font color="#0000FF">range</font> 
+	Access_To_Constant..Access_To_Variable;<br>
+	<font color="#0000FF">subtype</font> Access_To_Subprogram_Mode
+	<font color="#0000FF">is</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Mode_Type">
+	Mode_Type</a><br>
+&nbsp;&nbsp; <font color="#0000FF">range</font> 
+	Access_To_Procedure..Access_To_Protected_Function;<br>
+	<font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Component_Mode">
+	</a>subtype</font> Component_Mode <font color="#0000FF">is</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Mode_Type">
+	Mode_Type</a><br>
+&nbsp;&nbsp; <font color="#0000FF">range</font> Access_To_All..Object_Mode;<br>
+	<font color="#0000FF">subtype</font> Result_Mode <font color="#0000FF">is</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Mode_Type">
+	Mode_Type</a><br>
+&nbsp;&nbsp; <font color="#0000FF">range</font> 
+	In_Mode..Access_To_Protected_Function;</tt></p>
+</blockquote>
+<p>The type mode enumeration specifies modes applied to a parameter or 
+component.</p>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Anonymous_Access_Definition">
+	</a>type
+  </font>Anonymous_Access_Definition (Mode :
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Access_Mode">
+	Access_Mode</a>)<font color="#0000FF"> is record<br>
+  </font>&nbsp;&nbsp; Not_Null : Boolean;<font color="#0000FF"><br>
+&nbsp;&nbsp; case
+  </font>Mode<font color="#0000FF"> is<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; when
+  </font>Access_To_All..Access_To_Variable =&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Object<span lang="ru"> </span>&nbsp;:
+	<a href="https://www.dmitry-kazakov.de/ada/components.htm#Subtype_Indication">
+	Subtype_Indication</a>;<font color="#0000FF"><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; when
+  </font>Access_To_Subprogram_Mode =&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Profile :
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Parameter_Profile_Ptr">
+	Parameter_Profile_Ptr</a>;<font color="#0000FF"><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case
+  </font>Mode<font color="#0000FF"> is<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; when
+  </font>Access_To_Function | Access_To_Protected_Function =&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	Result : 
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Object_Specification_Ptr">Object_Specification_Ptr</a>;<font color="#0000FF"><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; when others</font> 
+	=&gt;<font color="#0000FF"><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	null</font>;<font color="#0000FF"><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; end case</font>;<font color="#0000FF"><br>
+&nbsp;&nbsp; end case</font>;<font color="#0000FF"><br>
+	end record</font>;</tt></p>
+</blockquote>
+<p>This type defines components of an access type. It can be either an access to 
+object or an access to a subprogram.</p>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Array_Type_Specification">
+	</a>type A</font>rray_Type_Specification<br>
+&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; Mode&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	: 
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Component_Mode">Component_Mode</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Dimension&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	: Positive;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Aliased_Component : Boolean<br>
+&nbsp;&nbsp;&nbsp;&nbsp; ) <font color="#0000FF">
+	&nbsp;is<br>
+	record<br>
+  </font>&nbsp;&nbsp; Indices : Subtype_Indication_Array (<font color="#800000">1</font>..Dimension);<font color="#0000FF"><br>
+&nbsp;&nbsp; case
+  </font>Mode<font color="#0000FF">
+	is<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; when
+  </font>Access_Mode =&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Access_Component :
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Anonymous_Access_Definition">
+	Anonymous_Access_Definition</a> (Mode);<font color="#0000FF"><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; when
+  </font>Object_Mode =&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Object_Component :
+	<a href="https://www.dmitry-kazakov.de/ada/components.htm#Subtype_Indication">
+	Subtype_Indication</a>;<font color="#0000FF"><br>
+&nbsp;&nbsp; end case;<br>
+	end record;<br>
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Array_Type_Specification_Ptr">
+	</a>type
+  </font>Array_Type_Specification_Ptr<font color="#0000FF">
+	is<br>
+&nbsp;&nbsp; access constant
+  </font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Array_Type_Specification">
+	Array_Type_Specification</a>;</tt></p>
+</blockquote>
+<p>This type defines components of an access type. It can be either an access to 
+object or an access to a subprogram.</p>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Object_Specification">
+	</a>type
+  </font>Object_Specification (Mode :
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Mode_Type">
+	Mode_Type</a>)<font color="#0000FF">
+	is record<br>
+&nbsp;&nbsp; case
+  </font>Mode<font color="#0000FF">
+	is<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; when
+  </font>Object_Mode =&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Variable&nbsp;&nbsp;&nbsp;&nbsp; 
+	:
+	<a href="https://www.dmitry-kazakov.de/ada/components.htm#Subtype_Indication">
+	Subtype_Indication</a>;<font color="#0000FF"><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; when I</font>n_Mode | Inout_Mode | Out_Mode =&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Not_Null&nbsp;&nbsp;&nbsp;&nbsp; 
+	: Boolean;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Result&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	: <a href="https://www.dmitry-kazakov.de/ada/components.htm#Subtype_Mark">Subtype_Mark</a>;<font color="#0000FF"><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; when
+  </font>Access_Mode =&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pointer&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	:
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Anonymous_Access_Definition">
+	Anonymous_Access_Definition</a> (Mode);<font color="#0000FF"><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; when
+  </font>Array_Mode =&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Array_Object :
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Array_Type_Specification_Ptr">
+	Array_Type_Specification_Ptr</a>;<font color="#0000FF"><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; when
+  </font>Constant_Mode =&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#0000FF">null</font>;<font color="#0000FF"><br>
+&nbsp;&nbsp; end case</font>;<font color="#0000FF"><br>
+	end record</font>;<br>
+	<font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Object_Specification_Ptr">
+	</a>type</font> Object_Specification_Ptr <font color="#0000FF">is<br>
+&nbsp;&nbsp; access constant</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Object_Specification">
+	Object_Specification</a>;</tt></p>
+</blockquote>
+<p>This type defines an object, component or result of a subprogram. It can be:</p>
+<ul>
+	<li>subtype indication, e.g. in <tt>...<font color="#0000FF">return</font> 
+	Integer <font color="#0000FF">range</font> <font color="#800000">1</font>..<font color="#800000">50</font></tt>;</li>
+	<li>subtype mark with null exclusion e.g. in <tt>...<font color="#0000FF">in 
+	out </font>Integer</tt>;</li>
+	<li>an anonymous access type, e.g. <tt>...<font color="#0000FF">access
+	</font>Integer</tt>;</li>
+	<li>an anonymous array, e,g, <tt>...<font color="#0000FF">array </font>(<font color="#800000">1</font>..<font color="#800000">10</font>)<font color="#800000">
+	</font><font color="#0000FF">of </font>Integer</tt>;</li>
+	<li>a named constant, e.g, <tt>...<font color="#0000FF">constant </font>:=
+	<font color="#800000">10</font></tt>;</li>
+</ul>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Parameter_Profile">
+	</a>type
+  </font>Parameter_Profile<br>
+&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; Parameters_Count : Natural<br>
+&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; <font color="#0000FF">is new
+  </font><a href="#Parsers.Ada_Syntax_Analyzer.Compilation_Context">
+	Compilation_Context</a><font color="#0000FF"> with<br>
+	record<br>
+  </font>&nbsp;&nbsp; Outer :
+	<a href="#Parsers.Ada_Syntax_Analyzer.Program_Node_Ptr">Program_Node_Ptr</a>;<br>
+	<font color="#0000FF"> &nbsp;
+  </font>&nbsp;List&nbsp; : 
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Parameter_Specification_Ptr_Array">Parameter_Specification_Ptr_Array</a> (<font color="#800000">1</font>..Parameters_Count);<font color="#0000FF"><br>
+	end record</font>;<br>
+	<font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Parameter_Profile_Ptr">
+	</a>type</font> Parameter_Profile_Ptr <font color="#0000FF">is access 
+	constant</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Parameter_Profile">
+	Parameter_Profile</a>;</tt></p>
+</blockquote>
+<p>This type defines parameters of a subprogram. The profile is a context since 
+names of parameters are defining identifiers visible in the body of the 
+subprogram.</p>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Parameter_Specification">
+	</a>type
+  </font>Parameter_Specification<br>
+&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; Mode&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	: Parameter_Mode;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Aliased_Parameter : Boolean;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Defaulted&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	: Boolean;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Length&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	: Natural;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Parameters_Count&nbsp; : Positive;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Aspects_Count&nbsp;&nbsp;&nbsp;&nbsp; 
+	: Natural<br>
+&nbsp;&nbsp;&nbsp;&nbsp; ) <font color="#0000FF">&nbsp;is new
+  </font><a href="#Parsers.Ada_Syntax_Analyzer.Declaration_Node">
+	Declaration_Node</a><font color="#0000FF"> with<br>
+	record<br>
+  </font>&nbsp;&nbsp; Parameters : Defining_Identifier_Array (<font color="#800000">1</font>..Parameters_Count);<br>
+&nbsp;&nbsp; Profile&nbsp;&nbsp;&nbsp; :
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Parameter_Profile_Ptr">
+	Parameter_Profile_Ptr</a>;<br>
+&nbsp;&nbsp; Aspects&nbsp;&nbsp;&nbsp; : Aspect_Items_Array (<font color="#800000">1</font>..Aspects_Count);<br>
+&nbsp;&nbsp; Default&nbsp;&nbsp;&nbsp; : Optional (Defaulted);<br>
+&nbsp;&nbsp; <font color="#0000FF">case
+  </font>Mode<font color="#0000FF"> is<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; when
+  </font>In_Mode | Inout_Mode | Out_Mode =&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Not_Null : Boolean;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Value&nbsp;&nbsp;&nbsp; : 
+	<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Ada_Parser.Subtype_Mark">Subtype_Mark</a>;<font color="#0000FF"><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; when
+  </font>Access_Mode =&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pointer&nbsp; :
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Anonymous_Access_Definition">
+	Anonymous_Access_Definition</a> (Mode);<font color="#0000FF"><br>
+&nbsp;&nbsp; end case</font>;<font color="#0000FF"><br>
+	end record</font>;<br>
+	<font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Parameter_Specification_Ptr">
+	</a>type</font> Parameter_Specification_Ptr <font color="#0000FF">is<br>
+&nbsp;&nbsp; access constant</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Parameter_Specification">
+	Parameter_Specification</a>;<font color="#0000FF"><br>
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Parameter_Specification_Ptr_Array">
+	</a>type </font>Parameter_Specification_Ptr_Array<font color="#0000FF"> is<br>
+&nbsp;&nbsp; array </font>(Positive<font color="#0000FF"> range</font> &lt;&gt;)<font color="#0000FF"> 
+	of </font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Parameter_Specification_Ptr">
+	Parameter_Specification_Ptr</a>;</tt></p>
+</blockquote>
+<p>This type defines parameters in the profile having the same definition like 
+X, Y : Integer.</p>
+<blockquote>
+  <p><font color="#0000FF"><tt>
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Singleton_Parameter">
+	</a></tt></font><tt><font color="#0000FF">type
+  </font>Singleton_Parameter<font color="#0000FF"> is new
+  </font><a href="#Parsers.Ada_Syntax_Analyzer.Compilation_Context">
+	Compilation_Context</a><font color="#0000FF"> with record<br>
+  </font>&nbsp;&nbsp; Name&nbsp;&nbsp;&nbsp; :<font color="#0000FF"> aliased
+  </font><a href="#Parsers.Ada_Syntax_Analyzer.Defining_Identifier">
+	Defining_Identifier</a>;<br>
+&nbsp;&nbsp; Type_Of : Parameter_Type;<font color="#0000FF"><br>
+	end record</font>;</tt></p>
+</blockquote>
+<p>Singleton parameter is a context with a single parameter defined, e.g. a loop 
+parameter.</p>
+<p>Further nodes are:</p>
+<ul>
+	<li>Attribute_Definition_Clause</li>
+	<li>Component_Clause_Array</li>
+	<li>Entry_Declaration</li>
+	<li>Enumeration_Representation_Clause</li>
+	<li>Exception_Declaration</li>
+	<li>Function_Instantiation</li>
+	<li>Package_Declaration</li>
+	<li>Package_Instantiation</li>
+	<li>Procedure_Declaration</li>
+	<li>Procedure_Instantiation</li>
+	<li>Single_Protected_Declaration</li>
+	<li>Single_Task_Declaration</li>
+	<li>Variant_Part</li>
+</ul>
+
+<H4><a name="2.1.4"></a>2.1.<span lang="ru">4</span>. Renaming nodes</H4>
+<p><a name="Parsers.Ada_Syntax_Analyzer.Declarations.Renamings"></a>The 
+child package 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="#Parsers.Ada_Syntax_Analyzer">Ada_Syntax_Analyzer</a>.<a href="#Parsers.Ada_Syntax_Analyzer.Declarations">Declarations</a>.<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Renamings">Renamings</a> 
+provides declaration of nodes used for renaming Ada entities.</p>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Renamings.Abstract_Renaming">
+	</a>type</font> Abstract_Renaming<br>
+&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; Aspects_Count : Natural<br>
+&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; <font color="#0000FF">is abstract new</font> <a href="#Parsers.Ada_Syntax_Analyzer.Declaration_Node">
+Declaration_Node</a> <font color="#0000FF">with<br>
+	record</font><br>
+&nbsp;&nbsp; Name&nbsp;&nbsp;&nbsp; : <font color="#0000FF">aliased</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Defining_Identifier">
+	Defining_Identifier</a>;<br>
+&nbsp;&nbsp; Target&nbsp; : 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Token">Tokens</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Token.Argument_Token">Argument_Token</a>;<br>
+&nbsp;&nbsp; Aspects : Aspect_Items_Array (<font color="#800000">1</font>..Aspects_Count);<br>
+	<font color="#0000FF">end record</font>;</tt></p>
+</blockquote>
+<p>This is the base type of all renaming nodes:</p>
+<ul>
+	<li>Exception_Renaming</li>
+	<li>Function_Renaming</li>
+	<li>Object_Renaming</li>
+	<li>Package_Renaming</li>
+	<li>Procedure_Renaming</li>
+</ul>
+
+<H4><a name="2.1.5"></a>2.1.5. Type declaration nodes</H4>
+<p><a name="Parsers.Ada_Syntax_Analyzer.Declarations.Types"></a>The 
+child package 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="#Parsers.Ada_Syntax_Analyzer">Ada_Syntax_Analyzer</a>.<a href="#Parsers.Ada_Syntax_Analyzer.Declarations">Declarations</a>.<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Types">Types</a> 
+provides declaration of nodes used for type declarations.</p>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Renamings.Abstract_Type_Declaration">
+	</a>type</font> Abstract_Type_Declaration<br>
+&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; Aspects_Count : Natural<br>
+&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; <font color="#0000FF">is abstract new</font> <a href="#Parsers.Ada_Syntax_Analyzer.Declaration_Node">
+Declaration_Node</a> <font color="#0000FF">with<br>
+	record</font><br>
+&nbsp;&nbsp; Name&nbsp;&nbsp;&nbsp; : <font color="#0000FF">aliased</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Defining_Identifier">
+	Defining_Identifier</a>;<br>
+&nbsp;&nbsp; Aspects : Aspect_Items_Array (<font color="#800000">1</font>..Aspects_Count);<br>
+	<font color="#0000FF">end record</font>;</tt></p>
+</blockquote>
+<p>This is the base type of all declaration nodes:</p>
+<ul>
+	<li>Access_Type_Declaration</li>
+	<li>Array_Type_Declaration</li>
+	<li>Decimal_Fixed_Point_Type_Declaration</li>
+	<li>Derived_Type_Declaration</li>
+	<li>Enumeration_Type_Declaration</li>
+	<li>Floating_Point_Type_Declaration</li>
+	<li>Incomplete_Type_Declaration</li>
+	<li>Interface_Type_Declaration</li>
+	<li>Modular_Type_Declaration</li>
+	<li>Ordinary_Fixed_Point_Type_Declaration</li>
+	<li>Private_Type_Declaration</li>
+	<li>Private_Extension_Type_Declaration</li>
+	<li>Protected_Type_Declaration</li>
+	<li>Record_Type_Declaration</li>
+	<li>Signed_Integer_Type_Declaration</li>
+	<li>Task_Type_Declaration</li>
+</ul>
+
+<H4><a name="2.1.6"></a>2.1.6. Stub declaration nodes</H4>
+<p><a name="Parsers.Ada_Syntax_Analyzer.Declarations.Stubs"></a>The 
+child package 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="#Parsers.Ada_Syntax_Analyzer">Ada_Syntax_Analyzer</a>.<a href="#Parsers.Ada_Syntax_Analyzer.Declarations">Declarations</a>.<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Stubs">Stubs</a> 
+provides declaration of nodes used for stub declarations.</p>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Declarations.Stubs.Abstract_Stub"></a>
+	type</font> Abstract_Stub<br>
+&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; Aspects_Count : Natural<br>
+&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; <font color="#0000FF">is abstract new</font> <a href="#Parsers.Ada_Syntax_Analyzer.Declaration_Node">
+Declaration_Node</a> <font color="#0000FF">with<br>
+	record</font><br>
+&nbsp;&nbsp; Name&nbsp;&nbsp;&nbsp; : <font color="#0000FF">aliased</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Defining_Identifier">
+	Defining_Identifier</a>;<br>
+&nbsp;&nbsp; Aspects : Aspect_Items_Array (<font color="#800000">1</font>..Aspects_Count);<br>
+	<font color="#0000FF">end record</font>;</tt></p>
+</blockquote>
+<p>This is the base type of all stub declaration nodes:</p>
+<ul>
+	<li>Function_Stub</li>
+	<li>Package_Stub</li>
+	<li>Procedure_Stub</li>
+	<li>Protected_Stub</li>
+	<li>Task_Stub</li>
+</ul>
+<p align="right">
+  <a href="#1.5" name="2.2"></a><a href="#2.1"><IMG src="prev.gif" alt="[Back]" width="29"
+      height="29"></a><a href="#5"><IMG
+      src="index.gif" alt="[TOC]" width="29" height="29"></a><a href="#2.3"><IMG src="next.gif" alt="[Next]" width="29" height="29"></a></p>
+<H3>2.2. Body nodes</H3>
+<p><a name="Parsers.Ada_Syntax_Analyzer.Bodies"></a>The 
+child package 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="#Parsers.Ada_Syntax_Analyzer">Ada_Syntax_Analyzer</a>.<a href="#Parsers.Ada_Syntax_Analyzer.Bodies">Bodies</a> 
+provides declaration of nodes used bodies.</p>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Bodies.Abstract_Body"></a>type</font> 
+	Abstract_Body<br>
+&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; Declarations&nbsp; : <font color="#0000FF">
+	access constant</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Declaration_Context">
+	Declaration_Context</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Aspects_Count : Natural<br>
+&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; is <font color="#0000FF">abstract new</font> <a href="#Parsers.Ada_Syntax_Analyzer.Declaration_Node">
+Declaration_Node</a> <font color="#0000FF">with<br>
+	record</font><br>
+&nbsp;&nbsp; Name&nbsp;&nbsp;&nbsp; : <font color="#0000FF">aliased</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Defining_Identifier">
+	Defining_Identifier</a>;<br>
+&nbsp;&nbsp; Aspects : Aspect_Items_Array (<font color="#800000">1</font>..Aspects_Count);<br>
+	<font color="#0000FF">end record</font>;</tt></p>
+</blockquote>
+<p>This is the base type of all body declaration nodes:</p>
+<ul>
+	<li>Entry_Body</li>
+	<li>Function_Body</li>
+	<li>Function_Expression</li>
+	<li>Null_Procedure</li>
+	<li>Package_Body</li>
+	<li>Protected_Body</li>
+	<li>Task_Body</li>
+</ul>
+<p align="right"><a name="2.3"></a><a href="#2.2"><IMG src="prev.gif" alt="[Back]" width="29"
+      height="29"></a><a href="#5"><IMG
+      src="index.gif" alt="[TOC]" width="29" height="29"></a><a href="#2.4"><IMG src="next.gif" alt="[Next]" width="29" height="29"></a></p>
+<H3>2.3. Statement nodes</H3>
+<p><a name="Parsers.Ada_Syntax_Analyzer.Statements"></a>The 
+child package 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="#Parsers.Ada_Syntax_Analyzer">Ada_Syntax_Analyzer</a>.<a href="#Parsers.Ada_Syntax_Analyzer.Statements">Statements</a> 
+provides declaration of nodes used bodies.</p>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Statements.Abstract_Statement_Node">
+	</a>type</font> Abstract_Statement_Node (Labels_Count : Natural)
+	<font color="#0000FF">is abstract<br>
+&nbsp;&nbsp; new</font> <a href="#Parsers.Ada_Syntax_Analyzer.Program_Node">
+	Program_Node</a> <font color="#0000FF">with<br>
+	record</font><br>
+&nbsp;&nbsp; Location : 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source">Multiline_Source</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Multiline_Source.Location">Location</a>;<br>
+&nbsp;&nbsp; Path&nbsp;&nbsp;&nbsp;&nbsp; :
+	<a href="#Parsers.Ada_Syntax_Analyzer.Statements.Statement_Location">
+	Statement_Location</a>;<br>
+&nbsp;&nbsp; Labels&nbsp;&nbsp; : Defining_Identifier_Array (<font color="#800000">1</font>..Labels_Count);<br>
+	<font color="#0000FF">end record</font>;<br>
+	<a name="Parsers.Ada_Syntax_Analyzer.Statements.Statement_Ptr"></a>type 
+	Statement_Ptr <font color="#0000FF">is access constant</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Statements.Abstract_Statement_Node">
+	Abstract_Statement_Node</a>'Class;<br>
+	<a name="Parsers.Ada_Syntax_Analyzer.Statements.Statement_Ptr_Array"></a>
+	type Statement_Ptr_Array <font color="#0000FF">is<br>
+&nbsp;&nbsp; array</font> (Positive <font color="#0000FF">range</font> &lt;&gt;)
+	<font color="#0000FF">of</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Statements.Statement_Ptr">
+	Statement_Ptr</a>;</tt></p>
+</blockquote>
+<p>This is the base type of all statement nodes. The statement has a location in 
+the source and a location in a statement sequence. The statement also has a list 
+of labels. The labels are located in front of the statement except for a 
+sequence of statements which has labels at its end.</p>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Statements.Statement_Location"></a>type</font> 
+	Statement_Location <font color="#0000FF">is record</font><br>
+&nbsp;&nbsp; Sequence :
+	<a href="#Parsers.Ada_Syntax_Analyzer.Statements.Statement_Sequence_Ptr">
+	Statement_Sequence_Ptr</a>;<br>
+&nbsp;&nbsp; Position : Positive;<br>
+	<font color="#0000FF">end record</font>;</tt></p>
+</blockquote>
+<p>The statement location points a sequence and position inside it.</p>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Statements.Statement_Sequence"></a>type</font> 
+	Statement_Sequence<br>
+&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; Labels_Count : Natural;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Length&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	: Positive<br>
+&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; <font color="#0000FF">is new</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Statements.Abstract_Statement_Node">
+	Abstract_Statement_Node</a> (Labels_Count) <font color="#0000FF">with<br>
+	record</font><br>
+&nbsp;&nbsp; Context : <a href="#Parsers.Ada_Syntax_Analyzer.Context_Location">
+	Context_Location</a>;<br>
+&nbsp;&nbsp; Outer&nbsp;&nbsp; :
+	<a href="#Parsers.Ada_Syntax_Analyzer.Program_Node_Ptr">Program_Node_Ptr</a>;<br>
+&nbsp;&nbsp; List&nbsp;&nbsp;&nbsp; : 
+	<a href="#Parsers.Ada_Syntax_Analyzer.Statements.Statement_Ptr_Array">Statement_Ptr_Array</a> (<font color="#800000">1</font>..Length);<br>
+	<font color="#0000FF">end record</font>;<br>
+	<font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Statements.Statement_Sequence_Ptr"></a>
+	type</font> Statement_Sequence_Ptr <font color="#0000FF">is<br>
+&nbsp;&nbsp; access constant</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Statements.Statement_Sequence">
+	Statement_Sequence</a>'Class;<br>
+	<font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Statements.Unhandled_Statement_Sequence_Ptr">
+	</a>type </font>Unhandled_Statement_Sequence_Ptr <font color="#0000FF">is<br>
+&nbsp;&nbsp; access constant</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Statements.Statement_Sequence">
+	Statement_Sequence</a>;</tt></p>
+</blockquote>
+<p>A statement sequence is a statement that contains other statements. <i>
+Context</i> is the location of context in where the sequence is located. <i>
+Outer</i> is the node that contains the sequence. <i>List</i> is the statements 
+list. For example:</p>
+<blockquote>
+	<table border="0" cellspacing="0" cellpadding="0">
+		<tr>
+			<td>&nbsp;<tt><font color="#0000FF">procedure </font>P
+			<font color="#0000FF">is</font></tt></td>
+			<td>&nbsp;</td>
+			<td align="center">&nbsp;&nbsp; </td>
+			<td align="center">&nbsp;</td>
+		</tr>
+		<tr>
+			<td bgcolor="#FFDEBD"><tt>
+&nbsp;&nbsp; I : Integer; <br>
+&nbsp;&nbsp; A : Float;</tt></td>
+			<td bgcolor="#FFDEBD">&nbsp;</td>
+			<td align="center" bgcolor="#FFDEBD"><i>Context</i></td>
+			<td bgcolor="#FFDEBD" align="center">&nbsp;</td>
+		</tr>
+		<tr>
+			<td><tt>
+			<font color="#0000FF">begin</font></tt></td>
+			<td>&nbsp;</td>
+			<td align="center">&nbsp;</td>
+			<td bgcolor="#FFFFFF" align="center">&nbsp;</td>
+		</tr>
+		<tr>
+			<td bgcolor="#FFFF99"><tt>
+			<font color="#0000FF">&nbsp;&nbsp; if</font> I &lt; 0
+			<font color="#0000FF">then</font></tt></td>
+			<td bgcolor="#FFFF99">&nbsp;</td>
+			<td align="center" bgcolor="#FFFF99">&nbsp;</td>
+			<td bgcolor="#FFFF99" align="center">&nbsp;</td>
+		</tr>
+		<tr>
+			<td bgcolor="#B8D3D1">&nbsp;<tt>&nbsp;&nbsp;&nbsp;&nbsp; A := 0.0;</tt></td>
+			<td bgcolor="#B8D3D1">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+			<td bgcolor="#B8D3D1" align="center">&nbsp;&nbsp;&nbsp;<i>Sequence</i>&nbsp;&nbsp;&nbsp;</td>
+			<td bgcolor="#FFFF99" align="center">&nbsp; <i>Outer</i> (<i>if 
+			statement</i>)&nbsp;&nbsp;&nbsp;
+			</td>
+		</tr>
+		<tr>
+			<td bgcolor="#FFFF99"><tt>
+&nbsp;&nbsp; <font color="#0000FF">end if</font>;</tt></td>
+			<td bgcolor="#FFFF99">&nbsp;</td>
+			<td align="center" bgcolor="#FFFF99">&nbsp;</td>
+			<td align="center" bgcolor="#FFFF99">&nbsp;</td>
+		</tr>
+		<tr>
+			<td><tt>
+			<font color="#0000FF">end</font> P;</tt></td>
+			<td>&nbsp;</td>
+			<td align="center">&nbsp;</td>
+			<td align="center">&nbsp;</td>
+		</tr>
+	</table>
+	</blockquote>
+<blockquote>
+  <p><tt>
+	<a name="Parsers.Ada_Syntax_Analyzer.Statements.Handled_Statement_Sequence">
+	</a><font color="#0000FF">type</font> Handled_Statement_Sequence<br>
+&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; Labels_Count&nbsp;&nbsp; : Natural;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Length&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	: Positive;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Handlers_Count : Natural<br>
+&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; <font color="#0000FF">is new </font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Statements.Statement_Sequence">
+	Statement_Sequence</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	(&nbsp; Labels_Count =&gt; Labels_Count,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	Length&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; =&gt; Length<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	)&nbsp; <font color="#0000FF">with<br>
+	record</font><br>
+&nbsp;&nbsp; Handlers : 
+	<a href="#Parsers.Ada_Syntax_Analyzer.Statements.Exception_Handler_Ptr_Array">Exception_Handler_Ptr_Array</a> (<font color="#800000">1</font>..Handlers_Count);<br>
+	<font color="#0000FF">end record</font>;<br>
+	<font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Statements.Handled_Statement_Sequence_Ptr">
+	</a>type</font> Handled_Statement_Sequence_Ptr <font color="#0000FF">is<br>
+&nbsp;&nbsp; access constant</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Statements.Handled_Statement_Sequence">
+	Handled_Statement_Sequence</a>;</tt></p>
+</blockquote>
+<p>A handled statement sequence has exception handlers attached to it.</p>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Statements.Exception_Handler"></a>type</font> 
+	Exception_Handler<br>
+&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; Has_Parameter : Boolean;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Choices_Count : Natural<br>
+&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp; <font color="#0000FF">is<br>
+	record</font><br>
+&nbsp;&nbsp; Outer&nbsp;&nbsp;&nbsp; :
+	<a href="#Parsers.Ada_Syntax_Analyzer.Statements.Handled_Statement_Sequence_Ptr">
+	Handled_Statement_Sequence_Ptr</a>;<br>
+&nbsp;&nbsp; Sequence :
+	<a href="#Parsers.Ada_Syntax_Analyzer.Statements.Unhandled_Statement_Sequence_Ptr">
+	Unhandled_Statement_Sequence_Ptr</a>;<br>
+&nbsp;&nbsp; Choices&nbsp; :
+	<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Ada_Parser.Argument_List">Argument_List</a> 
+	(<font color="#800000">1</font>..Choices_Count);<br>
+&nbsp;&nbsp; <font color="#0000FF">case</font> Has_Parameter
+	<font color="#0000FF">is<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; when</font> True =&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Parameter :
+	<font color="#0000FF">aliased</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Declarations.Specifications.Singleton_Parameter">
+	Singleton_Parameter</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#0000FF">when</font> False =&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#0000FF">null</font>;<br>
+&nbsp;&nbsp; <font color="#0000FF">end case</font>;<br>
+	<font color="#0000FF">end record</font>;<br>
+	<font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Statements.Exception_Handler_Ptr"></a>
+	type</font> Exception_Handler_Ptr <font color="#0000FF">is access constant</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Statements.Exception_Handler">
+	Exception_Handler</a>;<br>
+	<font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Statements.Exception_Handler_Ptr_Array">
+	</a>type</font> Exception_Handler_Ptr_Array <font color="#0000FF">is<br>
+&nbsp;&nbsp; array</font> (Positive <font color="#0000FF">range</font> &lt;&gt;)
+	<font color="#0000FF">of</font>
+	<a href="#Parsers.Ada_Syntax_Analyzer.Statements.Exception_Handler_Ptr">
+	Exception_Handler_Ptr</a>;</tt></p>
+</blockquote>
+<p>A handler has a list of choices, sequence of statements and optionally a 
+parameter.</p>
+<p>The statement nodes are:</p>
+<ul>
+	<li>Abort_Statement</li>
+	<li>Accept_Statement</li>
+	<li>Assignment_Statement</li>
+	<li>Asynchronous_Transfer_Control</li>
+	<li>Block_Statement</li>
+	<li>Conditional_Entry_Call</li>
+	<li>Call_Statement</li>
+	<li>Case_Statement</li>
+	<li>Delay_Statement</li>
+	<li>Exit_Statement</li>
+	<li>Extended_Return_Statement</li>
+	<li>For_Loop_Statement</li>
+	<li>Goto_Statement</li>
+	<li>If_Statement</li>
+	<li>Parallel_Block_Statement</li>
+	<li>Raise_Statement</li>
+	<li>Requeue_Statement</li>
+	<li>Selective_Accept</li>
+	<li>Simple_Return_Statement</li>
+	<li>Timed_Entry_Call</li>
+	<li>While_Loop_Statement</li>
+</ul>
+<p align="right"><a name="2.4"></a><a href="#2.3"><IMG src="prev.gif" alt="[Back]" width="29"
+      height="29"></a><a href="#5"><IMG
+      src="index.gif" alt="[TOC]" width="29" height="29"></a><a href="#2.5"><IMG src="next.gif" alt="[Next]" width="29" height="29"></a></p>
+<H3>2.4. Tree and cross-reference output</H3>
+<p><a name="Parsers.Ada_Syntax_Analyzer.Text_IO"></a>The child package 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="#Parsers.Ada_Syntax_Analyzer">Ada_Syntax_Analyzer</a>.<a href="#Parsers.Ada_Syntax_Analyzer.Text_IO">Text_IO</a> 
+provides procedures to output the tree and cross-reference.</p>
+<blockquote>
+  <p><tt><font color="#0000FF">
+	<a name="Parsers.Ada_Syntax_Analyzer.Text_IO.Put"></a>procedure</font> Put<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Tree</b>&nbsp;&nbsp; 
+	:
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Token">Tokens</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Token.Argument_Token">Argument_Token</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>
+	Output</b> : File_Type := Standard_Output;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>
+	Prefix</b> : String := &quot;&quot;;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>
+	Nested</b> :
+	<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Nesting">
+	Nesting</a> := Top<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );<br>
+	<font color="#0000FF">procedure</font> Put<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Tree</b>&nbsp;&nbsp; 
+	:
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Token">Tokens</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Token.Argument_Token">Argument_Token</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Name</b>&nbsp;&nbsp; 
+	: String;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>
+	Prefix</b> : String := &quot;&quot;;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>
+	Nested</b> :
+	<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Nesting">
+	Nesting</a>:= Top<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );</tt></p>
+</blockquote>
+<p>These procedures output the abstract syntax tree. For example, the output of
+<i>Hello-World</i> procedure:</p>
+<blockquote>
+  <p><tt>&lt;library&gt;<br>
+&nbsp;&nbsp;&nbsp;declarations<br>
+&nbsp;&nbsp;&nbsp;|__with&nbsp;at&nbsp;10:1..13:16<br>
+&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;|__Ada.Text_IO&nbsp;at&nbsp;8:6..16<br>
+&nbsp;&nbsp;&nbsp;|__use&nbsp;at&nbsp;10:1..13:16<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|__Ada.Text_IO&nbsp;at&nbsp;8:24..34<br>
+procedure&nbsp;Hello_World&nbsp;at&nbsp;10:1..13:16<br>
+begin<br>
+|__*()&nbsp;at&nbsp;12:13..28<br>
+&nbsp;&nbsp;&nbsp;|__Put_Line&nbsp;at&nbsp;12:4..11<br>
+&nbsp;&nbsp;&nbsp;|__"Hello&nbsp;world!"&nbsp;at&nbsp;12:14..27</tt></p>
+</blockquote>
+<blockquote>
+  <p><tt>
+	<font color="#0000FF">procedure</font> Put_Contexts (<b>File</b> : File_Type;
+	<b>Xref</b> : <a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference">
+	Cross_Reference</a>);<br>
+	<font color="#0000FF">procedure</font> Put_Contexts (<b>Xref</b> :
+	<a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference">Cross_Reference</a>);</tt></p>
+</blockquote>
+<p>These procedures output the contexts from the cross-reference. The output 
+contains the list context visibility scopes with the context type, its location 
+and the chain of it parent contexts. For example the cross-reference of this 
+program:</p>
+<blockquote>
+	<table border="0" cellspacing="0" cellpadding="0">
+		<tr>
+			<td valign="top"><tt>01</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#008000">--</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>02</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#008000">-- ARM&nbsp;3.10(21-26)&nbsp;Access&nbsp;Types</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>03</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#008000">--</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>04</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;Success:&nbsp;21:1..39:13&nbsp;Tree&nbsp;*</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>05</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>06</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;package&nbsp;body&nbsp;ARM_3_10&nbsp;is</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>07</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;type&nbsp;Frame&nbsp;is&nbsp;access&nbsp;Matrix;</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>08</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;type&nbsp;Peripheral_Ref&nbsp;is&nbsp;not&nbsp;null&nbsp;access&nbsp;Peripheral;</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>09</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;type&nbsp;Binop_Ptr&nbsp;is&nbsp;access&nbsp;all&nbsp;Binary_Operation'Class;</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>10</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;subtype&nbsp;Drum_Ref&nbsp;is&nbsp;Peripheral_Ref&nbsp;(Drum);</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>11</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;type&nbsp;Message_Procedure&nbsp;is&nbsp;access&nbsp;procedure&nbsp;(M&nbsp;:&nbsp;String&nbsp;:=&nbsp;&quot;Error!&quot;);</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>12</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;procedure&nbsp;Default_Message_Procedure&nbsp;(M&nbsp;:&nbsp;String);</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>13</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;Give_Message&nbsp;:&nbsp;Message_Procedure&nbsp;:=&nbsp;Default_Message_Procedure'Access;</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>14</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;procedure&nbsp;Other_Procedure&nbsp;(M&nbsp;:&nbsp;String);</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>15</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;begin</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>16</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;Give_Message&nbsp;:=&nbsp;Other_Procedure'Access;</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>17</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;Give_Message&nbsp;(&quot;File&nbsp;not&nbsp;found.&quot;);</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>18</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;Give_Message.all;</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>19</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;end&nbsp;ARM_3_10;</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>20</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>21</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>
+<font color="#0000FF">package&nbsp;body</font>&nbsp;ARM_3_10&nbsp;<font color="#0000FF">is</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>22</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>
+&nbsp;&nbsp;&nbsp;<font color="#0000FF">type</font>&nbsp;Frame&nbsp;<font color="#0000FF">is&nbsp;access</font>&nbsp;Matrix;&nbsp;<font color="#008000">&nbsp;--&nbsp;see&nbsp;3.6</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>23</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>
+&nbsp;&nbsp;&nbsp;<font color="#0000FF">type</font>&nbsp;Peripheral_Ref&nbsp;<font color="#0000FF">is&nbsp;not&nbsp;null&nbsp;access</font>&nbsp;Peripheral;&nbsp;&nbsp;<font color="#008000">--&nbsp;see&nbsp;3.8.1</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>24</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>
+&nbsp;&nbsp;&nbsp;<font color="#0000FF">type</font>&nbsp;Binop_Ptr&nbsp;<font color="#0000FF">is&nbsp;access&nbsp;all</font>&nbsp;Binary_Operation'Class;</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>25</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008000">--&nbsp;general&nbsp;access-to-class-wide,&nbsp;see&nbsp;3.9.1</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>26</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>
+&nbsp;&nbsp;&nbsp;<font color="#0000FF">subtype</font>&nbsp;Drum_Ref&nbsp;<font color="#0000FF">is</font>&nbsp;Peripheral_Ref(Drum);&nbsp;<font color="#008000">--&nbsp;see&nbsp;3.8.1</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>27</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			&nbsp;</td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>28</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>
+&nbsp;&nbsp;&nbsp;<font color="#0000FF">type</font>&nbsp;Message_Procedure&nbsp;<font color="#0000FF">is&nbsp;access&nbsp;procedure</font>&nbsp;(M&nbsp;:&nbsp;<font color="#0000FF">in</font>&nbsp;String&nbsp;:=&nbsp;"<font color="#FF0000">Error!</font>");</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>29</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>
+&nbsp;&nbsp;&nbsp;<font color="#0000FF">procedure</font>&nbsp;Default_Message_Procedure(M&nbsp;:&nbsp;<font color="#0000FF">in</font>&nbsp;String);</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>30</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>
+&nbsp;&nbsp;&nbsp;Give_Message&nbsp;:&nbsp;Message_Procedure&nbsp;:=&nbsp;Default_Message_Procedure'Access;</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>31</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			&nbsp;</td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>32</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>
+&nbsp;&nbsp;&nbsp;<font color="#0000FF">procedure</font>&nbsp;Other_Procedure(M&nbsp;:&nbsp;<font color="#0000FF">in</font>&nbsp;String);</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>33</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<font color="#0000FF"><tt>
+begin</tt></font></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>34</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>
+&nbsp;&nbsp;&nbsp;Give_Message&nbsp;:=&nbsp;Other_Procedure'Access;</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>35</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			&nbsp;</td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>36</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>
+&nbsp;&nbsp;&nbsp;Give_Message("<font color="#FF0000">File&nbsp;not&nbsp;found.</font>");</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>37</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008000">--&nbsp;call&nbsp;with&nbsp;parameter&nbsp;(.all&nbsp;is&nbsp;optional)</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>38</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>
+&nbsp;&nbsp;&nbsp;Give_Message.all;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008000">--&nbsp;call&nbsp;with&nbsp;no&nbsp;parameters</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>39</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>
+			<font color="#0000FF">end</font>&nbsp;ARM_3_10;</tt></td>
+		</tr>
+	</table>
+</blockquote>
+<p>looks like::</p>
+<blockquote>
+  <p><tt>Scopes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Defining&nbsp;identifiers&nbsp;context<br>
+------&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;----------------------------<br>
+	21:1..39:13&nbsp;&nbsp;&nbsp; library unit context at 21:1 (0 items)<br>
+	22:4..39:0&nbsp;&nbsp;&nbsp;&nbsp; declarative part at 22:4..33:0 (8 items)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	after library unit context at 21:1 (0 items)</tt></p>
+</blockquote>
+<p>There are two contexts. The library unit context with no items declared. The 
+package body is attached to that context. The visibility scope covers all 
+package body. The package body has a declaration context with 8 items declared 
+in it. Its parent context is the library unit context.</p>
+<blockquote>
+  <p><tt>
+	<font color="#0000FF">procedure</font> Put_Defining_Identifiers<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>File</b>&nbsp; 
+	: File_Type;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Xref</b>&nbsp; 
+	:
+	<a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference">Cross_Reference</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>
+	Field</b> : Output_Length := <font color="#800000">50</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );<br>
+	<font color="#0000FF">procedure</font> Put_Defining_Identifiers<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Xref</b>&nbsp; 
+	:
+	<a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference">Cross_Reference</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>
+	Field</b> : Output_Length := <font color="#800000">50</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );</tt></p>
+</blockquote>
+<p>These procedures output the list of declared items in the cross-reference. 
+The parameter <b>Field</b> specified the maximum identifier name length. If the 
+name exceeds this limit, it is truncated in the output. For the program above:</p>
+<blockquote>
+  <p><tt>Identifier&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Locations<br>
+----------&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;---------<br>
+ARM_3_10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;21:14..21<br>
+Binop_Ptr&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;24:9..17<br>
+Default_M...rocedure&nbsp;29:14..38<br>
+Drum_Ref&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;26:12..19<br>
+Frame&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;22:9..13<br>
+Give_Message&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;30:4..15<br>
+M&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;28:48..48,&nbsp;29:40..40,&nbsp;32:30..30<br>
+Message_Procedure&nbsp;&nbsp;&nbsp;&nbsp;28:9..25<br>
+Other_Procedure&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;32:14..28<br>
+Peripheral_Ref&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;23:9..22</tt></p>
+</blockquote>
+
+<p align="right"><a name="2.5"></a><a href="#2.4"><IMG src="prev.gif" alt="[Back]" width="29"
+      height="29"></a><a href="#5"><IMG
+      src="index.gif" alt="[TOC]" width="29" height="29"></a><a href="#3"><IMG src="next.gif" alt="[Next]" width="29" height="29"></a></p>
+<H3>2.5. Serialization</H3>
+<p><a name="Parsers.Ada_Syntax_Analyzer.Serialization"></a>The child package 
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers">Parsers</a>.<a href="#Parsers.Ada_Syntax_Analyzer">Ada_Syntax_Analyzer</a>.<a href="#Parsers.Ada_Syntax_Analyzer.Serialization">Serialization</a> 
+provides syntax tree serialization.<span lang="ru"> </span>The following 
+subprograms are defined in the package:</p>
+<blockquote>
+  <p><tt>
+	<font color="#0000FF">procedure</font> Restore<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Stream</b> :
+	<font color="#0000FF">in out</font> Root_Stream_Type'Class;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Pool</b>&nbsp;&nbsp; 
+	: <font color="#0000FF">in out</font> Root_Storage_Pool'Class;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>
+	Offset</b> : <font color="#0000FF">in out</font> Stream_Element_Offset;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>
+	Result</b> : <font color="#0000FF">out</font>
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Token">Tokens</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Token.Argument_Token">Argument_Token</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Xref</b>&nbsp;&nbsp; 
+	: <a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference_Ptr">
+	Cross_Reference_Ptr</a>&nbsp;&nbsp;&nbsp; := <font color="#0000FF">null</font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>File</b>&nbsp;&nbsp; 
+	: <a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference_Ptr">
+	Source_Description_Ptr</a> := <font color="#0000FF">null</font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>
+	Trace</b>&nbsp; : File_Access&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	:= <font color="#0000FF">null</font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>
+	Prefix</b> : String&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	:= &quot;&quot;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );</tt></p>
+</blockquote>
+<p>This procedure restores a syntax tree from <b>Stream</b>. The tree is 
+allocated in <b>Pool</b>. <b>Offset</b> is incremented by the number of storage 
+elements read. <b>Result</b> is the tree. <b>Xref</b> is the cross-reference to 
+update with the defining identifiers and scopes read. <b>File</b> is the source 
+description to apply to the input. <b>Trace</b> is the trace file. <b>Prefix</b> 
+is the prefix to use with the trace file output. Constraint_Error is propagated 
+on errors.</p>
+<blockquote>
+  <p><tt>
+	<font color="#0000FF">function</font> Restore<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Stream</b> :
+	<font color="#0000FF">access</font> Root_Stream_Type'Class;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Pool</b>&nbsp;&nbsp; 
+	: <font color="#0000FF">access</font> Root_Storage_Pool'Class;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Xref</b>&nbsp;&nbsp; 
+	: <a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference_Ptr">
+	Cross_Reference_Ptr</a>&nbsp;&nbsp;&nbsp; := <font color="#0000FF">null</font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>File</b>&nbsp;&nbsp; 
+	: <a href="#Parsers.Ada_Syntax_Analyzer.Cross_Reference_Ptr">
+	Source_Description_Ptr</a> := <font color="#0000FF">null</font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Trace</b>&nbsp; 
+	: File_Access&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	:= <font color="#0000FF">null</font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Prefix</b> 
+	: String&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+	:= &quot;&quot;<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )&nbsp;
+	<font color="#0000FF">return</font>
+<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Token">Tokens</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Token.Argument_Token">Argument_Token</a>;</tt></p>
+</blockquote>
+<p>This function is a variant of the above procedure.</p>
+<blockquote>
+  <p><tt>
+	<font color="#0000FF">procedure</font> Store<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp; <b>Stream</b> :
+	<font color="#0000FF">in out</font> Root_Stream_Type'Class;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>Tree</b>&nbsp;&nbsp; 
+	:
+	<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Token">Tokens</a>.<a href="https://www.dmitry-kazakov.de/ada/components.htm#Parsers.Generic_Token.Argument_Token">Argument_Token</a>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ <b>Offset</b> :
+	<font color="#0000FF">in out</font> Stream_Element_Offset; ]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>
+	Trace</b>&nbsp; : File_Access := <font color="#0000FF">null</font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>
+	Prefix</b> : String&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; := &quot;&quot;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; );</tt></p>
+</blockquote>
+<p>This procedure stores the syntax tree <b>Tree</b> into <b>Stream</b>. <b>
+Offset</b> is incremented by the number of storage elements written. <b>Trace</b> 
+is the trace file. <b>Prefix</b> is the prefix to use with the trace file 
+output. Constraint_Error is propagated on errors.</p>
+
+<hr><p align="right">
+  <A name="3"></A><a href="#2.5"><IMG src="prev.gif" alt="[Back]" width="29"
+      height="29"></a><A href="#5"><IMG
+      src="index.gif" alt="[TOC]" width="29" height="29"></A><A
+      href="#3.1"><IMG src="next.gif" alt="[Next]" width="29" height="29"></A></p>
+<H2>3. Test suite</H2>
+The test suite is provided for testing the analyzer. The suite is located in the 
+subdirectory <i>./test_suite</i>. Some of the test sources are:<ul>
+	<li>the <i>Ada Reference Manual</i> code samples</li>
+	<li>the <i><a href="http://www.ada-auth.org/acats.html">ACATS</a></i></li>
+	<li>the <a href="https://en.wikibooks.org/wiki/Ada_Programming"><i>Ada 
+	Programming </i>Wiki Book</a></li>
+	<li><a href="https://github.com/Blady-Com/AARM_Examples">Blady-Com 
+	repository</a> of compilable AARM examples</li>
+</ul>
+<p align="right">
+  <A name="3.1"></A><A href="#3"><IMG src="prev.gif" alt="[Back]" width="29"
+      height="29"></A><A href="#5"><IMG
+      src="index.gif" alt="[TOC]" width="29" height="29"></A><A
+      href="#3.2"><IMG src="next.gif" alt="[Next]" width="29" height="29"></A></p>
+<H3>3.1. The test program</H3>
+<p>The test suite directory contains the project <i>test_suite.gpr</i>. The 
+arguments of the program is the list of files or directories containing tests. 
+When the keyword <i>trace</i> appears then tracing is enabled for the following 
+arguments. Without 
+file or directory arguments the subdirectory <i>tests</i> is used. The program scans each directory 
+and uses each file as a test. It stops at the first test failed. The program 
+exist code is success only when all tests pass.</p>
+<p align="right">
+  <a name="3.2"></a><a href="#3.1"><IMG src="prev.gif" alt="[Back]" width="29"
+      height="29"></a><A href="#5"><IMG
+      src="index.gif" alt="[TOC]" width="29" height="29"></A><a href="#4"><IMG src="next.gif" alt="[Next]" width="29" height="29"></a></p>
+<H3>3.2. The syntax of a test file</H3>
+<p>The test is a source of an Ada program that may consist of several 
+compilation units. The source starts with a comment. The comment specifies the 
+required outcome.</p>
+
+<H4><a name="3.2.1"></a>3.2.1. Success tests</H4>
+<p>A succes test contains the keyword <i>Success</i> followed by colon. For 
+example:</p>
+<blockquote>
+	<table border="0" cellspacing="0" cellpadding="0">
+		<tr>
+			<td valign="top"><tt>01</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#008000">--</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>02</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#008000">-- Description: Hello world test</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>03</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#008000">--</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>04</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#008000">-- Success: 10:1..13:16 Tree *</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>05</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#008000">--</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>06</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#008000">-- with Ada.Text_IO; use Ada.Text_IO; procedure Hello_World is begin Put_Line 
+(&quot;Hello world!&quot;); end Hello_World;</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>07</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#008000">--</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>08</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#0000FF">with</font> Ada.Text_IO; 
+			<font color="#0000FF">use</font> 
+Ada.Text_IO;</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>09</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">&nbsp;</td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>10</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#0000FF">procedure</font> Hello_World 
+			<font color="#0000FF">is</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>11</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#0000FF">begin</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>12</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>&nbsp;&nbsp; Put_Line (&quot;Hello world!&quot;);</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>13</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#0000FF">end</font> Hello_World;</tt></td>
+		</tr>
+	</table>
+</blockquote>
+<p>The keyword <i>Success</i> is followed by a comma-separated list of excepted 
+locations. For each unit in the test there is one item in the list. Then the 
+following optional elements may follow:</p>
+<ul>
+	<li>The tree output. It starts with the keyword Tree followed by the output 
+	file name where the trees of the parsed units are stored. If the name is 
+	specified as *, the output file has the name and extension of the test file 
+	and the extension <i>.tree</i>;</li>
+	<li>The cross-reference checks;</li>
+	<li>The expected result of tree output.</li>
+</ul>
+<p>A cross-reference check starts with the keyword <i>find</i>. The has the 
+syntax</p>
+<blockquote>
+<tt>&lt;check&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>::=</b> find &lt;name&gt; at &lt;location&gt; = 
+&lt;places-set&gt; <b>|</b> empty<br>
+&lt;places-set&gt; <b>::=</b> &lt;place&gt; <b>[</b>,&lt;places-set&gt;<b>]</b><br>
+&lt;place&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>::</b>= &lt;location&gt;<b>(</b>&lt;position&gt;<b>)</b></tt></blockquote>
+<p>The set of places specifies the list of locations where an identifier 
+matching the specified one is declared. The position is one of the declaration. 
+The check is made against the function
+<a href="#Parsers.Ada_Syntax_Analyzer.Find">Find</a>. For example:</p>
+<blockquote>
+	<table border="0" cellspacing="0" cellpadding="0">
+		<tr>
+			<td valign="top"><tt>01</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#008000">--</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>02</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#008000">-- Object&nbsp;orientation&nbsp;https://en.wikibooks.org/wiki/Ada_Programming/Object_Orientation</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>03</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#008000">--</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>04</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;Success:&nbsp;26:1..37:15&nbsp;find Object&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+at 27:9..14&nbsp; = empty</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>05</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;find 
+Class_Member_1&nbsp;&nbsp; at 35:14..27 = 27:4..37:0(2)</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>06</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;find New_Class_Member at 37:0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+= 27:4..37:0(3)</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>07</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;find Skilled_In&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+at 31:23..35 = empty</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>08</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;find 
+Skilled_In&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; at 32:1..1&nbsp;&nbsp; = 
+31:1..32:6(1)</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>09</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+find Programmer&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; at 27:1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+= 25:1..26:0(2)</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>10</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>11</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;with&nbsp;Person;</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>12</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;package&nbsp;Programmer&nbsp;is</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>13</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;type&nbsp;Object&nbsp;is&nbsp;new&nbsp;Person.Object</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>14</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and&nbsp;Printable.Object</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>15</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>16</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;record</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>17</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Skilled_In&nbsp;:&nbsp;Language_List;</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>18</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end&nbsp;record;</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>19</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;overriding</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>20</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;procedure&nbsp;Class_Member_1&nbsp;&nbsp;&nbsp;(This&nbsp;:&nbsp;Object);</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>21</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;not&nbsp;overriding</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>22</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;procedure&nbsp;New_Class_Member&nbsp;(This&nbsp;:&nbsp;Object;&nbsp;That&nbsp;:&nbsp;String);</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>23</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;&nbsp;end&nbsp;Programmer;</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>24</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>25</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt> <font color="#0000FF">with</font>&nbsp;Person;</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>26</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#0000FF">package</font>&nbsp;Programmer&nbsp;<font color="#0000FF">is</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>27</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#0000FF">&nbsp;&nbsp; type</font>&nbsp;Object&nbsp;<font color="#0000FF">is&nbsp;new</font>&nbsp;Person.Object</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>28</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000FF">and</font>&nbsp;Printable.Object</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>29</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>&nbsp;&nbsp;&nbsp;<font color="#0000FF">with</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>30</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#0000FF">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;record</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>31</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Skilled_In&nbsp;:&nbsp;Language_List;</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>32</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000FF">end&nbsp;record</font>;</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>33</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>&nbsp;&nbsp;&nbsp;<font color="#0000FF">overriding</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>34</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#0000FF">&nbsp;&nbsp;&nbsp;procedure</font>&nbsp;Class_Member_1&nbsp;&nbsp;&nbsp;(This&nbsp;:&nbsp;in&nbsp;Object);</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>35</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>&nbsp;&nbsp;&nbsp;<font color="#0000FF">not&nbsp;overriding</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>36</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#0000FF">&nbsp;&nbsp;&nbsp;procedure</font>&nbsp;New_Class_Member&nbsp;(This&nbsp;:&nbsp;Object;&nbsp;That&nbsp;:&nbsp;String);</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>37</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>
+<font color="#0000FF">end&nbsp;</font>Programmer;</tt></td>
+		</tr>
+	</table>
+</blockquote>
+<p>If ! appears before <i>Success</i> the test is the last test to run.</p>
+
+<H4><a name="3.2.2"></a>3.2.2. Failure tests</H4>
+<p>A test for invalid program contains the keyword <i>Failure</i> followed by colon. 
+The expected error message is specified on the same line. For 
+example:</p>
+<blockquote>
+	<table border="0" cellspacing="0" cellpadding="0">
+		<tr>
+			<td valign="top"><tt>01</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#008000">--</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>02</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#008000">-- ACATS&nbsp;B55A01V</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>03</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#008000">--</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>04</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--&nbsp;Failure:&nbsp;Expression&nbsp;is&nbsp;expected&nbsp;at&nbsp;12:20</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>05</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#008000">--</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>06</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+<tt><font color="#0000FF">PROCEDURE</font>&nbsp;B55A01V&nbsp;<font color="#0000FF">IS</font></tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>07</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">&nbsp;</td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>08</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VBF&nbsp;:&nbsp;BOOLEAN&nbsp;:=&nbsp;FALSE;</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>09</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">&nbsp;</td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>10</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<font color="#0000FF"><tt>BEGIN</tt></font></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>11</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">&nbsp;</td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>12</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#0000FF">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WHILE&nbsp;</font>VBF&nbsp;LOOP;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;ERROR:&nbsp;';'.</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>13</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000FF">NULL</font>;</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>14</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#0000FF">END&nbsp;LOOP</font>;</tt></td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>15</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">&nbsp;</td>
+		</tr>
+		<tr>
+			<td valign="top"><tt>16</tt></td>
+			<td valign="top" style="border-right-style: solid; border-right-width: 1px">&nbsp;</td>
+			<td valign="top" style="border-left-style: solid; border-left-width: 1px; border-right-style: none; border-right-width: medium">&nbsp;</td>
+			<td valign="top" style="border-left-style: none; border-left-width: medium">
+			<tt><font color="#0000FF">END&nbsp;B55A01V</font>;</tt></td>
+		</tr>
+	</table>
+</blockquote>
+<p>If ! appears before <i>Failure</i> the test is the last test to run.</p>
+<hr><p align="right">
+  <A name="4"></A><a href="#3.2"><IMG src="prev.gif" alt="[Back]" width="29"
+      height="29"></a><A href="#5"><IMG
+      src="index.gif" alt="[TOC]" width="29" height="29"></A><A
+      href="#5"><IMG src="next.gif" alt="[Next]" width="29" height="29"></A></p>
+<H2>4. <a name="changes_log"></a>Changes log</H2>
+<P>
+<i>
+The following versions were tested with the compilers:</i>
+<ul>
+  <li>
+<i>GNAT 16.1.1 20260625</i></li>
+	<li>
+<i>GNAT Studio Community 2020 (20200427)</i></li>
+	<li>
+<i>GNAT Community 2019 (20190517-83)</i></li>
+  <li>
+<i>GNAT Community 2018 (20180523-73)</i></li>
+	<li>
+<i>GNAT 12.2.0</i></li>
+	<li><i>GNAT 8-12</i></li>
+  </ul>
+<P>
+First release 1.0 (5 August 2026)<HR>
+<H2 align="right">
+  <a name="5"></a><a href="#4"><IMG src="prev.gif" alt="[Back]" width="29" height="29"></a><a href="#5"><IMG src="index.gif" alt="[TOC]" width="29" height="29"></a></H2>
+<H2>5. Table of Contents</H2>
+<table border="0" cellpadding="0" cellspacing="20">
+<tr><td valign="top">
+<b><big><big>1</big></big></b>&nbsp;<A href="#1"><big>The Ada parser</big></A><BR>
+&nbsp;&nbsp;&nbsp; <A href="#1.1">1.1. Compilation contexts</A><BR>
+&nbsp;&nbsp;&nbsp; <A href="#1.2">1.2. Defining identifiers</A><BR>
+&nbsp;&nbsp;&nbsp; <A href="#1.3">1.3. Cross-reference</a><br>
+&nbsp;&nbsp;&nbsp; <A href="#1.4">1.4. Identifier entries</a><br>
+&nbsp;&nbsp;&nbsp; <A href="#1.5">1.5. Context_Entries</a><br>
+<hr>
+<b><big><big>2</big></big></b>&nbsp;<big><A href="#2">The syntax tree</A></big><BR>
+&nbsp;&nbsp;&nbsp; <A href="#2.1">2.1. Declaration nodes</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <A href="#2.1.1">2.1.1.Common declaration 
+types</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="#2.1.2">2.1.2.Formal generic 
+parameter nodes</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="#2.1.3">2.1.3.Specification nodes</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="#2.1.4">2.1.<span lang="ru">4</span>.Renaming 
+nodes</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="#2.1.5">2.1.5.Type declaration 
+nodes</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="#2.1.6">2.1.6.Stub declaration 
+nodes</a><br>
+&nbsp;&nbsp;&nbsp; <A href="#2.2">2.2. Body nodes</a><br>
+&nbsp;&nbsp;&nbsp; <A href="#2.3">2.3. Statement nodes</a><br>
+&nbsp;&nbsp;&nbsp; <A href="#2.4">2.4. Tree and cross-reference nodes</a><br>
+&nbsp;&nbsp;&nbsp; <a href="#2.5">2.5. Serialization</a></td>
+	<td valign="top">
+<b><big><big>3</big></big></b>&nbsp;<A href="#3"><big>Test suite</big></A><BR>
+&nbsp;&nbsp;&nbsp; <A href="#3.1">3.1. The test program</A><BR>
+&nbsp;&nbsp;&nbsp; <A href="#3.2">3.2. The syntax of a test file</A><BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <A href="#3.2.1">3.2.1. Success test</A><BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <A href="#3.2.2">3.2.2. Failure test</A><hr>
+<b><big><big>4</big></big></b>&nbsp;<A href="#4"><big>Changes log</big></A><br>
+<hr>
+<b><big><big>5</big></big></b>&nbsp;<a href="#5"><font size="4">Table of 
+contents</font></a></td>
+</tr>
+</table>
+</BODY>
+</HTML>

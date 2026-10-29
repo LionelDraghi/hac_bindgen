@@ -1,0 +1,43 @@
+--
+-- ACATS BA1001D
+--
+-- Failure: Function stubs are not allowed for operators as found at 22:15..19
+--
+--PACKAGE BA1001D_PKG IS
+--
+--     TYPE LIM IS LIMITED PRIVATE;
+--
+--     FUNCTION "AND" (LEFT, RIGHT: BOOLEAN) RETURN BOOLEAN;
+--     FUNCTION "="   (LEFT, RIGHT: LIM)     RETURN BOOLEAN;
+--     FUNCTION "+"   (LEFT, RIGHT: INTEGER) RETURN INTEGER;
+--     FUNCTION "+"   (      RIGHT: INTEGER) RETURN INTEGER;
+--
+--PRIVATE
+--     TYPE LIM IS RANGE -10 .. 10;
+--
+--END BA1001D_PKG;
+
+PACKAGE BODY BA1001D_PKG IS
+
+     FUNCTION "AND"
+         (LEFT, RIGHT: BOOLEAN) RETURN BOOLEAN IS SEPARATE; -- ERROR: {1:6;1}
+
+     FUNCTION "="
+         (LEFT, RIGHT: LIM) RETURN BOOLEAN IS SEPARATE; -- ERROR: {1:6;1}
+
+     FUNCTION "+"
+         (LEFT, RIGHT: INTEGER) RETURN INTEGER IS SEPARATE; -- ERROR: {1:6;1}
+
+     FUNCTION "+"
+         (RIGHT: INTEGER) RETURN INTEGER IS SEPARATE; -- ERROR: {1:6;1}
+
+END BA1001D_PKG;
+
+-- Note: The following is provided for completeness. Processing this unit
+-- is not required.
+
+WITH BA1001D_PKG;
+PROCEDURE BA1001D IS
+BEGIN
+     NULL;
+END BA1001D;

@@ -1,0 +1,50 @@
+--
+-- ACATS B95007B
+--
+-- Failure: 'E1' at 26:18..19 is not matched by 'P1' at 28:15..16
+--
+PROCEDURE B95007B IS
+
+     TASK T IS
+          ENTRY E0;
+          ENTRY E1 (I : INTEGER);
+          ENTRY E2 (BOOLEAN) (I : INTEGER);
+     END T;
+
+     TASK BODY T IS
+
+          PROCEDURE P0 RENAMES E0;
+          PROCEDURE P1 (I : INTEGER) RENAMES E1;
+          PROCEDURE P2 (I : INTEGER) RENAMES E2 (TRUE);
+
+     BEGIN
+
+--        ACCEPT E0 DO
+--             NULL;
+--        END P0;                       -- ERROR: MISMATCHED IDENTIFIER.
+
+          ACCEPT E1 (I : INTEGER) DO
+               NULL;
+          END P1;                       -- ERROR: MISMATCHED IDENTIFIER.
+
+          ACCEPT E2 (TRUE) (I : INTEGER) DO
+               NULL;
+          END P2;                       -- ERROR: MISMATCHED IDENTIFIER.
+
+          ACCEPT P0 DO                  -- ERROR: NOT AN ENTRY.
+               NULL;
+          END E0;                       -- OPTIONAL ERROR: MISMATCHED ID.
+
+          ACCEPT P1 (I : INTEGER) DO    -- ERROR: NOT AN ENTRY.
+               NULL;
+          END E1;                       -- OPTIONAL ERROR: MISMATCHED ID.
+
+          ACCEPT P2 (I : INTEGER) DO    -- ERROR: NOT AN ENTRY.
+               NULL;
+          END E2;                       -- OPTIONAL ERROR: MISMATCHED ID.
+
+     END T;
+
+BEGIN
+     NULL;
+END B95007B;

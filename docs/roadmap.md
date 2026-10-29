@@ -33,9 +33,9 @@ templates.
 
 ## M3 — Binding model and analysis (essential)
 
-- [ ] Binding model: the parser-independent representation of a
-      package's public API (subprograms, parameters, modes, types,
-      source locations) — `Hac_Bindgen.Model`
+- [x] Binding model: the parser-independent representation of all
+      public declarations, subprogram profiles, types, and source
+      locations — `Hac_Bindgen.Model`
 - [ ] Analysis backend #1: parse an Ada package specification into the
       model. Backend choice recorded in
       `docs/dev/design_discussions.md` (Libadalang vs a lightweight

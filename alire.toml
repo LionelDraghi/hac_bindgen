@@ -1,0 +1,25 @@
+name = "hac_bindgen"
+description = "Binding generator: expose native Ada APIs to embedded HAC scripts"
+version = "0.1.0-dev"
+
+authors = ["Lionel Draghi"]
+maintainers = ["Lionel Draghi <lionel.draghi@free.fr>"]
+maintainers-logins = ["LionelDraghi"]
+licenses = "Apache-2.0"
+website = "https://github.com/LionelDraghi/hac_bindgen"
+tags = ["hac", "scripting", "bindings", "code-generation"]
+
+project-files = ["hac_bindgen.gpr"]
+
+[configuration]
+output_dir = "src/Alire_config"
+generate_C = false
+generate_gpr = false
+
+[[depends-on]]
+# The generated code targets the HAC_Sys.Interfacing API; the witness
+# application of the end-to-end tests embeds HAC directly.
+hac = ">=0.45"
+
+[[depends-on]]
+gnat = ">=14"

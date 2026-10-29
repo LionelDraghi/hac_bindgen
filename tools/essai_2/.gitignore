@@ -1,0 +1,17 @@
+# Artefacts de build de l'essai 2 (analyseur Kazakov)
+obj*/
+bin/
+lib/
+*.a
+*.so
+*.dll
+*.exe
+*.ali
+*.o
+
+# Archives et fichiers dérivés
+*.tgz
+analyzer_test.gpr
+
+# Débris de l'extension VS Code Ada
+.ada_compile_*.json

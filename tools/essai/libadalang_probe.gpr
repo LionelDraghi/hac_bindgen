@@ -1,0 +1,9 @@
+with "libadalang";
+
+project Libadalang_Probe is
+   for Languages use ("Ada");
+   for Source_Dirs use ("src");
+   for Object_Dir use "obj";
+   for Exec_Dir use "bin";
+   for Main use ("libadalang_probe.adb");
+end Libadalang_Probe;

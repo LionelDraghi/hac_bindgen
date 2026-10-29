@@ -1,0 +1,11 @@
+name = "libadalang_probe"
+description = "Isolated Libadalang API evaluation"
+version = "0.1.0-dev"
+authors = ["hac_bindgen maintainers"]
+licenses = "Apache-2.0"
+
+[[depends-on]]
+libadalang = "=26.0.0"
+
+[[depends-on]]
+gnat = "=15.3.1"

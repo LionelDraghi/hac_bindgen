@@ -17,7 +17,7 @@ The shared instructions in [`ada-project-template/AGENTS.md`](https://github.com
 
 | Capability | Enabled | Project parameter, if any |
 |---|---:|---|
-| bbt executable specifications | yes | `make test`; scenarios live in `docs/features/` and run through the top-level Makefile |
+| bbt executable specifications | yes | `make check`; scenarios live in `docs/features/` and run through the top-level Makefile |
 | Unit tests | no | the bbt scenarios are the test suite |
 | SPARK analysis | no | N/A |
 | Formal proof | no | N/A |

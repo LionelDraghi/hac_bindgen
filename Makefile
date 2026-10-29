@@ -15,7 +15,7 @@ BBT_ARTIFACTS := $(ARTIFACTS_DIR)/bbt
 SCENARII := ../docs/features/A001_cli.md \
             ../docs/features/C001_usage_errors.md
 
-.PHONY: all help check build clean
+.PHONY: all help check build witness clean
 
 all: check
 
@@ -24,6 +24,7 @@ help:
 	@echo "  make      = make all = check (build + tests)"
 	@echo "  make check  build, then run the bbt executable documentation"
 	@echo "  make build  build the tool only (validation mode)"
+	@echo "  make witness  build and run the HAC callback witness"
 	@echo "  make clean  remove build and test artifacts"
 	@echo "  make help   this list"
 
@@ -37,6 +38,10 @@ build:
 	@echo === building hac_bindgen
 	$(ALR) build
 	@echo OK
+
+witness:
+	$(ALR) exec -- gprbuild -P tests/witness/witness.gpr
+	cd tests/witness && ../../bin/witness_main.exe
 
 clean:
 	@echo === cleaning

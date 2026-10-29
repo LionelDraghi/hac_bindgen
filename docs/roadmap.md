@@ -21,14 +21,14 @@ generating anything. The reference is
 in `docs/dev/hac_interfacing_notes.md` and drive the generated-code
 templates.
 
-- [ ] Document the exact callback mechanism: `Exported_Procedure`
+- [x] Document the exact callback mechanism: `Exported_Procedure`
       (procedure with `HAC_Element_Array`), registration
       (`HAC_Sys.Interfacing.Register`), functions emulated through a
       result slot, argument and result representations (Integer,
       Long_Float, String, generic integer/enum/float), error reporting
       (`HAC_Type_Error`), and the HAC-side
       `with Import => True` declarations
-- [ ] First manually written witness application that embeds HAC and
+- [x] First manually written witness application that embeds HAC and
       runs a script through generated-style callbacks
 
 ## M3 — Binding model and analysis (essential)

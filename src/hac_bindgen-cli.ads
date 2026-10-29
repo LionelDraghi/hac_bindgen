@@ -1,7 +1,8 @@
---------------------------------------------------------------------------------
---  hac_bindgen - binding generator for embedded HAC
---  Copyright 2026 Lionel Draghi
---  Apache-2.0 (see LICENSE)
+-- -----------------------------------------------------------------------------
+--  hac_bindgen, binding generator for embedded HAC
+--  (https://github.com/LionelDraghi/hac_bindgen)
+--  SPDX-License-Identifier: Apache-2.0
+--  SPDX-FileCopyrightText: 2026, Lionel Draghi
 --
 --  Command-line interface (spec [S010], features A001 and C001).
 --
@@ -16,7 +17,7 @@
 --  check and generate. The traversal and the generation themselves are
 --  M3/M4 work; the two commands report their not-yet-implemented
 --  status until then.
---------------------------------------------------------------------------------
+-- -----------------------------------------------------------------------------
 
 package Hac_Bindgen.CLI is
 

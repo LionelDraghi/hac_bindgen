@@ -38,10 +38,10 @@ The shared instructions in [`ada-project-template/AGENTS.md`](https://github.com
 - HAC reference for the interfacing evidence: HAC 0.45.0, official repository
   https://github.com/zertovitch/hac; the in-tree dependency comes from the
   Alire community index.
-- Executable documentation: `docs/specifications.md` indexes the
-  `docs/features/` pages; feature files follow the `Annn`/`Bnnn`/`Cnnn`
-  numbering scheme (see `documentation_structure.md` in the reference
-  repository).
+- Executable documentation: `docs/specifications.md` follows the shared
+  `documentation_structure.md`; this project's feature prefixes are
+  `Annn` (bindable Ada language traits), `Bnnn` (non-bindable traits
+  and their warnings), and `Cnnn` (error cases).
 
 ## Exceptions
 

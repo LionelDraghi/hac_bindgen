@@ -37,9 +37,9 @@ templates.
       public declarations, subprogram profiles, types, and source
       locations — `Hac_Bindgen.Model`
 - [ ] Analysis backend #1: parse an Ada package specification into the
-      model. Backend choice recorded in
-      `docs/dev/design_discussions.md` (Libadalang vs a lightweight
-      reader; the comparison with a second backend is a gadget)
+      model with Libadalang (selected 2026-10-29, see
+      `docs/dev/design_discussions.md`); the comparison with a second
+      backend is a gadget
 - [ ] Licensing of the selected backend recorded before the decision
       (concern indexed in `docs/dev/concerns.md`)
 - [ ] Traversal contract: every public declaration classified bindable

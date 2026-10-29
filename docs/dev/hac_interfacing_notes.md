@@ -62,5 +62,7 @@ error scenarios ([C002]).
 - Does either backend need project configuration for a single-file
   specification?
 - Which backend gives reliable type resolution for the smallest
-  dependency cost — see the evaluation criteria in the original
-  manifesto (§8), kept there rather than duplicated here.
+  dependency cost. Evaluation criteria: coverage of the traversal
+  profile (subprogram and package identification, modes, result
+  types, source locations), dependency footprint and licence,
+  robustness on legal-but-unusual Ada, and integration effort.

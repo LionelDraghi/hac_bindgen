@@ -330,7 +330,8 @@ Any extension of the binding profile must satisfy all these rules:
 
 - [HAC Ada Compiler repository](https://github.com/zertovitch/hac)
 - `HAC_Sys.Interfacing` and the `demo/data_exchange*` examples in the
-  HAC source tree — the reference for M2
+  [HAC 0.45 sources](https://github.com/zertovitch/hac/tree/v0.45) —
+  the reference for M2
 - [Dmitry Kazakov's Simple Components](https://dmitry-kazakov.de/ada/components.htm)
   and the [Ada Syntax Analyzer](https://sourceforge.net/projects/ada-syntax-analyzer/)
 - [Libadalang](https://github.com/AdaCore/libadalang) and its

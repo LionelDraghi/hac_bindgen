@@ -1,6 +1,7 @@
 with Ada.Command_Line; use Ada.Command_Line;
 with Ada.Text_IO; use Ada.Text_IO;
 with Libadalang.Analysis;
+with Libadalang.Common;
 
 procedure Libadalang_Probe is
    package LAL renames Libadalang.Analysis;
@@ -28,7 +29,7 @@ begin
       Put_Line
         ("  " & LAL.Kind_Name (Decl) & ": " & LAL.Image (Decl));
 
-      if Decl.Kind in LAL.Subp_Decl then
+      if Decl.Kind in Libadalang.Common.Ada_Subp_Decl then
          declare
             Spec : constant LAL.Subp_Spec :=
               LAL.F_Subp_Spec (LAL.As_Subp_Decl (Decl));

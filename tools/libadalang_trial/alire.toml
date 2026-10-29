@@ -6,6 +6,3 @@ licenses = "Apache-2.0"
 
 [[depends-on]]
 libadalang = "=26.0.0"
-
-[[depends-on]]
-gnat = "=15.3.1"

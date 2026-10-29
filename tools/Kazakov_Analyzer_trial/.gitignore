@@ -1,4 +1,4 @@
-# Artefacts de build de l'essai 2 (analyseur Kazakov)
+# Build artifacts of the Kazakov analyzer trial
 obj*/
 bin/
 lib/
@@ -15,3 +15,5 @@ analyzer_test.gpr
 
 # Débris de l'extension VS Code Ada
 .ada_compile_*.json
+
+kazakov

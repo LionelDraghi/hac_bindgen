@@ -1,0 +1,22 @@
+# Alire local workspace state (lock file and local settings)
+alire/
+
+# Build artifacts
+obj*/
+bin/
+lib/
+*.o
+*.ali
+*.a
+*.so
+*.dll
+*.exe
+
+# GNAT generated config projects
+config/libadalang_probe_config.h
+
+# Archives and derived files
+*.tgz
+
+# VS Code Ada extension debris
+.ada_compile_*.json

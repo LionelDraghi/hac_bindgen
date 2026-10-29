@@ -1,0 +1,53 @@
+Kazakov Ada syntax analyzer - HAC binding probe
+source: ../probe_fixture.ads
+
+--- compilation unit context (LIBRARY_UNIT_CONTEXT, scope at 1:1) ---
+    - WITH_CLAUSE_NODE  at 2:0
+      units      : Interfaces
+
+--- package Probe_Fixture (declared at 2:1) : PUBLIC part (bindable, scope at 3:4) ---
+    - SUBTYPE_DECLARATION_NODE  at 3:4
+      name       : Small
+      indication : Integer range 1..10
+      base type  : Integer
+      constraint : range 1..10
+      resolution : NONE for 'Integer' (not declared in the parsed sources)
+    - ENUMERATION_TYPE_DECLARATION_NODE  at 4:4
+      name       : Color
+      literals   : Red, Green
+    - PROCEDURE_DECLARATION_NODE  at 5:4
+      name       : Mutate
+      parameter  : X (name at 5:22)
+      mode       : in
+      type       : Integer
+      resolution : NONE for 'Integer' (not declared in the parsed sources)
+      parameter  : Y (name at 5:38)
+      mode       : in out
+      type       : Small
+      resolution : 'Small' -> SUBTYPE_DECLARATION_NODE 'Small' at 3:4
+      parameter  : Z (name at 5:56)
+      mode       : out
+      type       : Boolean
+      resolution : NONE for 'Boolean' (not declared in the parsed sources)
+    - FUNCTION_DECLARATION_NODE  at 6:4
+      name       : Add
+      parameter  : Left (name at 6:18)
+      parameter  : Right (name at 6:24)
+      mode       : in
+      type       : Integer
+      resolution : NONE for 'Integer' (not declared in the parsed sources)
+      result     : Integer
+      resolution : NONE for 'Integer' (not declared in the parsed sources)
+    - OBJECT_DECLARATION_NODE  at 7:4
+      name       : Value
+      constant   : TRUE
+      type       : Integer
+      resolution : NONE for 'Integer' (not declared in the parsed sources)
+      value      : 2
+
+--- package Probe_Fixture : PRIVATE part (NOT bindable, scope at 9:1) ---
+    - OBJECT_DECLARATION_NODE  at 9:4
+      name       : Internal
+      constant   : FALSE
+      type       : Integer
+      resolution : NONE for 'Integer' (not declared in the parsed sources)

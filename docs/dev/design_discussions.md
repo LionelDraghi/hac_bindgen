@@ -8,7 +8,7 @@ material risk.
 | Decision | Status | Date |
 |---|---|---|
 | Parser-independent binding model contract | Accepted | 2026-10-29 |
-| Analysis backend: Libadalang vs Dmitry Kazakov's Ada Syntax Analyzer | Discussing | 2026-10-29 |
+| Analysis backend: Libadalang vs Dmitry Kazakov's Ada Syntax Analyzer | Accepted (Libadalang) | 2026-10-29 |
 | HAC declaration mechanism: `with Import => True` placement (nested vs package spec) | Discussing | 2026-10-29 |
 | Boolean mapping route: generic enum vs Integer | Discussing | 2026-10-29 |
 | Manifest design (generated artefacts policy): check-in policy, generation during builds, source hashes, version coupling, JSON format | Discussing | 2026-10-29 |
@@ -67,12 +67,13 @@ supported type.
 - Before downstream use, validation checks every declaration has
   exactly one result and every warning has its required identifier,
   location, and reason.
-- Backend selection and licensing remain open and are tracked
-  separately.
+- Backend selection is settled (Libadalang, 2026-10-29); the license
+  and redistribution review of its dependency closure remains open and
+  is tracked separately.
 
 ### Analysis backend evaluation
 
-Status: Discussing
+Status: Accepted (Libadalang)
 Date: 2026-10-29
 Related: M3; [binding model proposal](../proposed/binding_model.md);
 [backend licensing concern](concerns.md)
@@ -151,34 +152,79 @@ queries, integration, and licensing, not whether to write a parser.
   subtype use and none for predefined `Integer` in that isolated
   source. This demonstrates candidate lookup, not complete type
   resolution or a semantic environment for predefined types.
+- Both candidates were then compared on the same focused fixture,
+  `tools/libadalang_trial/probe_fixture.ads`, by two probe drivers that
+  dump every public and private declaration with kind, name, source
+  location, subprogram profiles (parameter names, modes, types), enum
+  literals, subtype base type and range, and object/constant values
+  (dumps: `tools/libadalang_trial/probe_fixture_analysis.txt` and
+  `tools/Kazakov_Analyzer_trial/probe_fixture_analysis.txt`).
+- On that fixture both extract the same structural coverage: public
+  and private parts separated, declaration order preserved, profiles
+  with parameter names, modes, and types, enumeration literals, and
+  line:column locations.
+- Only Libadalang provides semantic resolution: `P_Referenced_Decl`
+  resolves `Small` to its declaring subtype and `Integer` to the
+  predefined `__standard` unit, `P_Base_Subtype` gives the ultimate
+  base type of a subtype, and the `Expr_Eval` evaluator returns the
+  statically evaluated range bounds (`1`, `10`) and constant value
+  (`Value = 2`) with RM semantics.
+- Kazakov's analyzer resolves names only within the parsed sources:
+  `Integer`, `Boolean`, and `Interfaces` come back unresolved, subtype
+  range bounds are token text (`"1..10"`) rather than evaluated bounds,
+  and there is no overload resolution, type propagation, or
+  representation information.
+- Driver friction on the same dump: the Libadalang probe is 281 lines
+  against a homogeneous node API (`Ada_Node` + `Kind`, generic
+  iteration, `As_*` conversions); the Kazakov probe is 402 lines
+  against a per-class typed node hierarchy (explicit `Get_Class`
+  dispatch, downcasts per class, explicit arena/stack storage).
+- The Libadalang 26.0.0 probe builds and runs standalone under GNAT
+  FSF 15.2.0 via Alire (isolated trial crate, 16 s build); the Kazakov
+  probe builds under GNAT 16.1. Both run to completion on the fixture.
 
-## Provisional direction
+## Decision
 
-Do not implement a home-grown Ada parser. The structural prototype for
-Dmitry Kazakov's Ada Syntax Analyzer 1.0 succeeded; compare it with
-Libadalang 25.0.0 on the same focused fixture before selecting a backend.
-Neither backend is selected yet.
+Select Libadalang as analysis backend #1, and use Dmitry Kazakov's Ada
+Syntax Analyzer only as comparison evidence. The binding model
+requires resolved type references, subtype chains, and statically
+evaluated constraints; Libadalang provides them natively while
+Kazakov's analyzer stops at name lookup inside the parsed sources.
 
 ## Rationale
 
-The alternatives are real Ada analysis libraries with different
-strengths: Libadalang exposes semantic resolution and an Alire-managed
-dependency, while Dmitry Kazakov's analyzer advertises Ada 2022 syntax
-coverage. The latter's documented cross-reference and type-resolution
-capabilities need checking against the model requirements rather than
-assuming syntax coverage provides semantic resolution.
+The model contract stores resolution state and subtype chains per
+declaration. With Libadalang these come directly from the library
+(`P_Referenced_Decl`, `P_Base_Subtype`, `Expr_Eval`); with Kazakov's
+analyzer the backend would have to rebuild a semantic layer — parse
+predefined-unit specifications, map names to a table of known types,
+and evaluate static expressions itself — which is precisely the work
+the generator exists to avoid. The two probes produced equivalent
+structural dumps, so the decision rests on semantic capability, Alire
+integration, and lower driver friction (281 vs 402 lines for the same
+dump), not on syntax coverage.
 
 ## Consequences
 
-- Keep either backend out of the production manifest until its focused
-  prototype builds with the project's GNAT 16 toolchain.
-- Do not lower the project's GNAT minimum merely to use Libadalang 26.
-- Complete license and redistribution review for the selected
-  backend's actual source and dependency closure before finalizing the
-  decision or preparing a release.
-- GNAT remains the legality authority; Libadalang diagnostics and
-  either analyzer's syntax/semantic facilities are analysis inputs,
-  not a replacement for the host compiler.
+- Implement backend #1 (package specification to `Hac_Bindgen.Model`)
+  with Libadalang; `tools/Kazakov_Analyzer_trial` is kept as decision
+  evidence and can be dropped once backend #1 lands.
+- Settle the Libadalang version against the project's GNAT minimum
+  before integration: 26.0.0 resolves to GNAT 15 (below the project
+  minimum of 16, acceptable only in the isolated trial so far), while
+  25.0.0 selects GNAT 16.1.0 but has not yet been built against
+  hac_bindgen. Do not lower the project's GNAT minimum to use
+  Libadalang 26.
+- Complete the license and redistribution review of the Libadalang
+  dependency closure (`GNATCOLL` crates are
+  `GPL-3.0-or-later WITH GCC-exception-3.1`; initial inventory only)
+  before release; tracked as a concern.
+- Probe-level coverage does not establish full Ada 2022 syntax or
+  inter-unit resolution (`with Interfaces` was not resolved in the
+  trial); extend the probe with these cases before relying on them in
+  backend #1.
+- GNAT remains the legality authority; Libadalang diagnostics are
+  analysis inputs, not a replacement for the host compiler.
 
 ## Template for a new discussion
 

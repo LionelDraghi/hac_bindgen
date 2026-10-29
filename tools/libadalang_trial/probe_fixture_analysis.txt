@@ -1,0 +1,31 @@
+=== Libadalang probe: probe_fixture.ads ===
+
+--- Public part ---
+  [public] kind=SubtypeDecl name='Small' sloc=3:4
+    base type (source): Integer resolved=ConcreteTypeDecl 'Integer' [/home/lionel/prj/hac_bindgen/tools/libadalang_trial/__standard 6:4]
+    constraint: range 1 .. 10
+      lower bound: static value=1  upper bound: static value=10
+    P_Base_Subtype: ConcreteTypeDecl 'Integer' [/home/lionel/prj/hac_bindgen/tools/libadalang_trial/__standard]
+  [public] kind=ConcreteTypeDecl name='Color' sloc=4:4
+    enumeration literals: 'Red'(4:19) 'Green'(4:24)
+  [public] kind=SubpDecl name='Mutate' sloc=5:4
+    subprogram procedure name='Mutate'
+    parameter name='X' mode=in type source=Integer resolved=ConcreteTypeDecl 'Integer' [/home/lionel/prj/hac_bindgen/tools/libadalang_trial/__standard 6:4]
+    parameter name='Y' mode=in out type source=Small resolved=SubtypeDecl 'Small' [/home/lionel/prj/hac_bindgen/tools/libadalang_trial/probe_fixture.ads 3:4]
+    parameter name='Z' mode=out type source=Boolean resolved=ConcreteTypeDecl 'Boolean' [/home/lionel/prj/hac_bindgen/tools/libadalang_trial/__standard 4:4]
+  [public] kind=SubpDecl name='Add' sloc=6:4
+    subprogram function name='Add'
+    parameter name='Left' mode=(default = in) type source=Integer resolved=ConcreteTypeDecl 'Integer' [/home/lionel/prj/hac_bindgen/tools/libadalang_trial/__standard 6:4]
+    parameter name='Right' mode=(default = in) type source=Integer resolved=ConcreteTypeDecl 'Integer' [/home/lionel/prj/hac_bindgen/tools/libadalang_trial/__standard 6:4]
+    result type source=Integer resolved=ConcreteTypeDecl 'Integer' [/home/lionel/prj/hac_bindgen/tools/libadalang_trial/__standard 6:4]
+  [public] kind=ObjectDecl name='Value' sloc=7:4
+    object kind: constant
+    type source=Integer resolved=ConcreteTypeDecl 'Integer' [/home/lionel/prj/hac_bindgen/tools/libadalang_trial/__standard 6:4]
+    default expression: 2
+    static value=2
+
+--- Private part ---
+  [private] kind=ObjectDecl name='Internal' sloc=9:4
+    object kind: variable
+    type source=Integer resolved=ConcreteTypeDecl 'Integer' [/home/lionel/prj/hac_bindgen/tools/libadalang_trial/__standard 6:4]
+    default expression: none

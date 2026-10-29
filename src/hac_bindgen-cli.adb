@@ -16,6 +16,8 @@ package body Hac_Bindgen.CLI is
 
    use type Dir.File_Kind;
 
+   Run_Error : exception;
+
    procedure Fail (Message : String);
 
    procedure Put_Usage (Stream : TIO.File_Type);
@@ -29,6 +31,7 @@ package body Hac_Bindgen.CLI is
       TIO.Put_Line (TIO.Standard_Error, "error: " & Message);
       Put_Usage (TIO.Standard_Error);
       CL.Set_Exit_Status (CL.Failure);
+      raise Run_Error;
    end Fail;
 
    ---------------------------------------------------------------------
@@ -57,7 +60,10 @@ package body Hac_Bindgen.CLI is
    procedure Run is
    begin
       if CL.Argument_Count = 0 then
-         Fail ("missing command");
+         --  No argument: same behavior as --help ([A001]).
+         Put_Usage (TIO.Standard_Output);
+         CL.Set_Exit_Status (CL.Success);
+         return;
       end if;
 
       declare
@@ -109,6 +115,9 @@ package body Hac_Bindgen.CLI is
             Fail ("invalid command '" & Command & "'");
          end if;
       end;
+   exception
+      when Run_Error =>
+         null;  --  message and status already emitted by Fail
    end Run;
 
 end Hac_Bindgen.CLI;

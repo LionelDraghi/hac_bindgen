@@ -35,9 +35,9 @@ The shared instructions in [`ada-project-template/AGENTS.md`](https://github.com
 ## Project-specific paths or release parameters
 
 - Tool name: `hac-bindgen` (executable), crate name: `hac_bindgen`
-- The HAC reference checkout used for the interfacing evidence lives
-  outside the repository, in `~/Private/hac-lab/hac_0.45.0_b9083b3c`;
-  the in-tree HAC dependency comes from the Alire community index.
+- HAC reference for the interfacing evidence: HAC 0.45.0, official repository
+  https://github.com/zertovitch/hac; the in-tree dependency comes from the
+  Alire community index.
 - Executable documentation: `docs/specifications.md` indexes the
   `docs/features/` pages; feature files follow the `Annn`/`Bnnn`/`Cnnn`
   numbering scheme (see `documentation_structure.md` in the reference

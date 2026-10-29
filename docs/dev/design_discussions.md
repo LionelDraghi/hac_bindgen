@@ -7,10 +7,10 @@ material risk.
 
 | Decision | Status | Date |
 |---|---|---|
-| Analysis backend: Libadalang vs lightweight reader (criteria in the original manifesto §8) | Discussing | 2026-10-29 |
+| Analysis backend: Libadalang vs lightweight reader | Discussing | 2026-10-29 |
 | HAC declaration mechanism: `with Import => True` placement (nested vs package spec) | Discussing | 2026-10-29 |
 | Boolean mapping route: generic enum vs Integer | Discussing | 2026-10-29 |
-| Manifest design (original manifesto §34 "Generated artefacts"): check-in policy, generation during builds, source hashes, version coupling, JSON format | Discussing | 2026-10-29 |
+| Manifest design (generated artefacts policy): check-in policy, generation during builds, source hashes, version coupling, JSON format | Discussing | 2026-10-29 |
 
 Statuses: Discussing | Accepted | Rejected | Superseded.
 

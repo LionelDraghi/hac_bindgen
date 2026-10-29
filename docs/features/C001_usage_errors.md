@@ -2,13 +2,20 @@
 
 Usage errors and tool failures: bad command lines, unreadable inputs,
 files that are not Ada specifications. These are distinct from the
-non-bindable-construct warnings of [B001](B001_non_bindable_constructs.md):
+non-bindable-construct warnings of [B001](../proposed/B001_non_bindable_constructs.md):
 here the tool cannot do its job at all ([S007], [S010]).
 
 ## Scenario: a missing input file is an error
 
 - When I run `../bin/hac-bindgen check no_such_file.ads`
-- Then the error output contains `no_such_file.ads`
+- Then the error output is
+  ```text
+  error: cannot read 'no_such_file.ads'
+  usage: hac-bindgen generate SOURCE... [--output-dir DIR]
+         hac-bindgen check SOURCE... [--output-dir DIR]
+         hac-bindgen --version
+         hac-bindgen --help
+  ```
 - And the exit code is `1`
 
 ## Scenario: an input that is not an Ada specification is an error
@@ -16,6 +23,10 @@ here the tool cannot do its job at all ([S007], [S010]).
 A text file that the analyser cannot read as an Ada package
 specification is a tool error, reported with the file name and the
 analyser message — not a traversal warning.
+
+The message itself is not specified yet: until the analyser lands
+(M3), the tool emits a stub message, so the scenario pins only
+the part that is already contractual — the file name.
 
 - Given the file `not_ada.ads` containing:
   ```text

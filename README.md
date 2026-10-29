@@ -3,8 +3,7 @@
 **An Ada-to-HAC binding generator: expose a native Ada API to embedded
 HAC scripts without writing the interfacing glue by hand.**
 
-`hac-bindgen` traverses ordinary Ada package specifications — the rich
-application API or a hand-written scripting façade — and generates
+`hac-bindgen` traverses ordinary Ada package specifications and generates
 everything an embedded [HAC](https://github.com/zertovitch/hac) program
 needs to call native code:
 

@@ -15,9 +15,9 @@ Project skeleton, CLI, executable-documentation harness.
 
 ## M2 — HAC interfacing evidence (essential)
 
-Stage 0 of the original manifesto: pin the real callback surface before
-generating anything. The reference checkout lives in
-`~/Private/hac-lab/hac_0.45.0_b9083b3c` (HAC 0.45.0); the findings land
+Stage 0: pin the real callback surface before
+generating anything. The reference is
+`https://github.com/zertovitch/hac` (HAC 0.45.0); the findings land
 in `docs/dev/hac_interfacing_notes.md` and drive the generated-code
 templates.
 
@@ -66,9 +66,9 @@ templates.
 - [ ] Strings end to end (ownership demonstrated, not assumed)
 - [ ] `out`/`in out` copy-back ([A002-06], [HACB0008] retired)
 - [ ] Several bound packages registering into one HAC environment
-      (name collisions included) — original manifesto §28.7 item 14
+      (name collisions included)
 - [ ] Repeated script execution in the same witness application,
-      if the HAC VM supports it — original manifesto §28.7 item 15
+      if the HAC VM supports it
 
 ## Gadgets (later, on demand)
 

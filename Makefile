@@ -15,10 +15,10 @@ BBT ?= bbt
 ARTIFACTS_DIR ?= artifacts
 BBT_ARTIFACTS := $(ARTIFACTS_DIR)/bbt
 
-# The executable documentation: every feature page that holds scenarios.
+# Executable documentation: the feature pages with runnable scenarios.
+# Pages in docs/proposed are specified but not executable yet; they join
+# this list when their scenarios run green.
 SCENARII := ../docs/features/A001_cli.md \
-            ../docs/features/A002_facade_generation.md \
-            ../docs/features/B001_non_bindable_constructs.md \
             ../docs/features/C001_usage_errors.md
 
 BUILD_TARGET := hac_bindgen

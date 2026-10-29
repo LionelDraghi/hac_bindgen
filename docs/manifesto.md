@@ -1,9 +1,7 @@
 # hac_bindgen manifesto
 
-Status: experimental proposal, promoted to a standalone project.
-The original manifesto (in the TopoProof repository, `tools/HAC_Bindgen_Manifesto.md`)
-described the intent; this document states it as it now stands. The
-detailed, testable content lives in [`specifications.md`](specifications.md)
+The manifesto describe the project motivations. 
+The detailed, testable content lives in [`specifications.md`](specifications.md)
 and in the [`features/`](features/) pages.
 
 ## 1. Motivation
@@ -44,16 +42,13 @@ it, and hac-bindgen binds it the same way. Seen from hac-bindgen, there
 is no difference: there is an API to interface, and the traversal
 decides, declaration by declaration, what is bound and what is warned.
 
-Consequences, relative to the original manifesto:
+Consequences:
 
 - there is no *binding-profile rejection* of a package: an input
   package is never "invalid" as a whole;
 - warnings replace rejections: the tool reports what it did and did not
   bind, and why, instead of refusing to work;
-- "the supplied package is a scripting façade and all of its
-  profile-compliant subprograms are exported" is obsolete: export
-  selection is the result of the traversal, not an assumption about the
-  input.
+- export selection is decided by the traversal, declaration by declaration, not assumed about the input.
 
 ## 3. Principles
 
@@ -66,8 +61,6 @@ Consequences, relative to the original manifesto:
    classifies each public declaration: bindable, or not. A non-bindable
    declaration produces a warning carrying a stable identifier, the
    source location and the reason. Generation proceeds for the rest.
-   (The original manifesto required a fully profile-compliant façade
-   and rejected packages; that stance is abandoned.)
 
 3. **No silent conversion.** A binding never narrows a numeric value,
    truncates a string, reinterprets an integer as an object, or
@@ -103,10 +96,8 @@ scenarios:
 - the **Given** are Ada files — the API to interface, with bodies that
   `Put_Line` their parameters, so that bbt can observe, from the
   printed output, that a call actually happened, in both directions;
-- the **When** are invocations of hac-bindgen;
-- the **Then** are calls to the real compilers — GNAT for the native
-  side, the real HAC compiler and VM for the script side — and the
-  comparison of the observed output.
+- the **When**: the invocations - hac-bindgen generates the glue, then the real toolchain runs: GNAT builds the native side, the HAC compiler and VM execute the scripts;
+- the **Then**: bbt compares the observed output with the expected one;
 
 Tests are end to end: they never stop at "the generated code looks
 right". A scenario runs the whole chain — façade, generated adapter,
@@ -128,8 +119,6 @@ flowchart TB
 
 ## 6. Priorities
 
-The manifesto originally listed a broad surface (manifest, `verify`
-command, diagnostics formats, analyser comparison, handle registries...).
 The development plan in [`roadmap.md`](roadmap.md) prioritises:
 
 **Essential** (the product):

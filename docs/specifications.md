@@ -13,6 +13,9 @@ The specifications are organised in two places:
 - **`features/`** — every *testable* functionality of hac-bindgen, one
   Markdown page per feature group, holding the bbt executable
   scenarios. The feature pages are the executable documentation.
+- **`proposed/`** — feature pages that are specified but not yet
+  executable: their scenarios do not run yet, so they stay out of the
+  bbt run.
 - **this document** — every *non-functional* specification: the rules
   that apply across features (determinism, generated-code marking,
   conversion safety, testing philosophy, error model), plus an index
@@ -23,6 +26,10 @@ Rules of the method:
 - The feature pages own every detail. The index below may summarise a
   feature, but never repeats what the page states: one durable source
   per fact.
+- A feature page stays in `proposed/` while it is only specified, and
+  moves to `features/` once its bbt scenarios run green. Feature pages
+  carry no status line: the distinction is made by the location and by
+  the index in section 3.
 - Features are numbered by a stable scheme:
 
   | Prefix | Meaning |
@@ -156,13 +163,24 @@ never proof that a source unit is legal Ada.
 
 ## 3. Feature index
 
+A feature page lives in [`features/`](features/) once its bbt scenarios
+run green; it stays in [`proposed/`](proposed/) while it is only
+specified. Feature pages carry no status line.
+
+Executable features (`features/`):
+
 | ID | Feature | Page | Status |
 |---|---|---|---|
-| A001 | Command-line interface | [features/A001_cli.md](features/A001_cli.md) | specified, partially implemented |
-| A002 | Facade generation: scalar profile | [features/A002_facade_generation.md](features/A002_facade_generation.md) | specified |
-| B001 | Non-bindable constructs: warnings | [features/B001_non_bindable_constructs.md](features/B001_non_bindable_constructs.md) | specified |
-| C001 | Usage and input errors | [features/C001_usage_errors.md](features/C001_usage_errors.md) | specified, partially implemented |
-| C002 | Runtime boundary errors | [features/C002_boundary_errors.md](features/C002_boundary_errors.md) | specified |
+| A001 | Command-line interface | [A001_cli.md](features/A001_cli.md) | partially implemented |
+| C001 | Usage and input errors | [C001_usage_errors.md](features/C001_usage_errors.md) | partially implemented |
+
+Proposed features ([`proposed/`](proposed/), specified, not executable):
+
+| ID | Feature | Page |
+|---|---|---|
+| A002 | Facade generation: scalar profile | [A002_facade_generation.md](proposed/A002_facade_generation.md) |
+| B001 | Non-bindable constructs: warnings | [B001_non_bindable_constructs.md](proposed/B001_non_bindable_constructs.md) |
+| C002 | Runtime boundary errors | [C002_boundary_errors.md](proposed/C002_boundary_errors.md) |
 
 Next free identifiers: `A003`, `B002`, `C003`.
 
@@ -231,10 +249,7 @@ The initial experiment will not:
 
 Restriction remains a feature ([S011]): a narrow binding profile keeps
 code generation deterministic, diagnostics clear, generated code
-readable and the trusted implementation small. What changed from the
-original manifesto is *where* the restriction applies: it shapes what
-hac-bindgen binds, not what it accepts as input.
-
+readable and the trusted implementation small.
 ## 7. Acceptance criteria
 
 The experiment is technically successful when all the following hold.
@@ -322,7 +337,3 @@ Any extension of the binding profile must satisfy all these rules:
   [user manual](https://docs.adacore.com/live/wave/libadalang/html/libadalang_ug/index.html)
 - [bbt](https://github.com/LionelDraghi/bbt) — the executable
   documentation tool
-- The original manifesto, preserved in the TopoProof repository
-  (`tools/HAC_Bindgen_Manifesto.md`); its traceability into this
-  repository is recorded in
-  [`dev/manifesto_traceability.md`](dev/manifesto_traceability.md)

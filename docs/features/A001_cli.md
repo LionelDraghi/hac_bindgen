@@ -16,8 +16,7 @@ hac-bindgen --version
 hac-bindgen --help
 ```
 
-Planned options, added as the features that need them land (the
-original manifesto's §10.2 explicit-generation form):
+Planned options, added as the features that need them land:
 
 ```text
 --native-package NAME   name of the generated native child package
@@ -44,12 +43,37 @@ appears in every generated artefact of a run.
 ## Scenario: help
 
 - When I successfully run `../bin/hac-bindgen --help`
-- Then the output contains `usage`
-- And the output contains `generate`
-- And the output contains `check`
+- Then the output is
+  ```text
+  usage: hac-bindgen generate SOURCE... [--output-dir DIR]
+         hac-bindgen check SOURCE... [--output-dir DIR]
+         hac-bindgen --version
+         hac-bindgen --help
+  ```
+
+## Scenario: no argument means help
+
+Invoking `hac-bindgen` without any argument is equivalent to
+`--help`: same output, same exit status.
+
+- When I successfully run `../bin/hac-bindgen`
+- Then the output is
+  ```text
+  usage: hac-bindgen generate SOURCE... [--output-dir DIR]
+         hac-bindgen check SOURCE... [--output-dir DIR]
+         hac-bindgen --version
+         hac-bindgen --help
+  ```
 
 ## Scenario: an unknown option is rejected
 
 - When I run `../bin/hac-bindgen --frobnicate`
-- Then the error output contains `usage`
+- Then the error output is
+  ```text
+  error: invalid command '--frobnicate'
+  usage: hac-bindgen generate SOURCE... [--output-dir DIR]
+         hac-bindgen check SOURCE... [--output-dir DIR]
+         hac-bindgen --version
+         hac-bindgen --help
+  ```
 - And the exit code is `1`

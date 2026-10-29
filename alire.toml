@@ -22,4 +22,4 @@ generate_gpr = false
 hac = ">=0.45"
 
 [[depends-on]]
-gnat = ">=14"
+gnat = ">=16"

@@ -1,8 +1,8 @@
 # HAC interfacing notes — M2 working document
 
-Stage 0 of the original manifesto: pin the real callback surface before
-generating anything. Reference checkout:
-`~/Private/hac-lab/hac_0.45.0_b9083b3c` (HAC 0.45.0), demos
+Stage 0: pin the real callback surface before
+generating anything. Reference:
+`https://github.com/zertovitch/hac` (HAC 0.45.0), demos
 `demo/data_exchange/` and `demo/data_exchange_simple/`. Everything
 below must be **verified against the actual implementation**, not
 assumed — this file records the evidence and the answers.
@@ -32,7 +32,7 @@ assumed — this file records the evidence and the answers.
 - [ ] `with Import => True` inside a package specification (not only
       in nested procedure declarations): does the HAC compiler accept
       it? This decides the shape of the generated HAC declaration
-      package (`Geometry_Scripting_HAC` of the original manifesto).
+      package (for instance `Geometry_Scripting_HAC`).
 - [ ] Boolean representation: no direct `To_HAC (Boolean)` — test the
       generic enum route and the Integer route; pick and record.
 - [ ] Exact integer and floating-point representations of the HAC VM

@@ -1,0 +1,9 @@
+with "libadalang";
+
+project Hac_Bindgen_Backend is
+   for Languages use ("Ada");
+   for Source_Dirs use (".", "config");
+   for Object_Dir use "obj";
+   for Exec_Dir use "bin";
+   for Main use ("hac_bindgen_backend.adb");
+end Hac_Bindgen_Backend;

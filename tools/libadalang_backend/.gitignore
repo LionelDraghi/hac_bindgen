@@ -1,0 +1,5 @@
+# Alire workspace state and build artifacts
+alire/
+config/
+obj/
+bin/

@@ -7,7 +7,8 @@ the details remain in the authoritative source.
 | Priority | Concern | Kind | Source | Status |
 |---|---|---|---|---|
 | P2 | Complete the license/redistribution review of the Libadalang dependency closure (GNATCOLL crates: `GPL-3.0-or-later WITH GCC-exception-3.1`, initial inventory only) | Design | [design_discussions.md](design_discussions.md#analysis-backend-evaluation) | Open |
-| P2 | Settle the Libadalang version against the GNAT 16 minimum: 26.0.0 resolves to GNAT 15, 25.0.0 selects GNAT 16.1.0 but is unbuilt against hac_bindgen | Design | [design_discussions.md](design_discussions.md#analysis-backend-evaluation) | Open |
+| P3 | Upstream the `libgpr2` GNAT 16 port once stabilized, so Libadalang can eventually link into the main crate | Design | [design_discussions.md](design_discussions.md#analysis-backend-evaluation) | Open |
+| P2 | Freeze the textual dump format between `tools/libadalang_backend` and the main crate before backend #1 consumes it — format type accepted (house line-oriented text, [design_discussions.md](design_discussions.md#interchange-format-between-backend-and-main-crate)); grammar under proposal [A003_interchange_dump.md](../features/A003_interchange_dump.md) | Design | [design_discussions.md](design_discussions.md#interchange-format-between-backend-and-main-crate) | Open |
 | P2 | The `with Import => True` declaration mechanism in a package specification is unverified | Design | [hac_interfacing_notes.md](hac_interfacing_notes.md) | Open |
 | P3 | Boolean has no direct `To_HAC` overload: mapping route (generic enum vs Integer) to be tested and fixed | Design | [hac_interfacing_notes.md](hac_interfacing_notes.md) | Open |
 

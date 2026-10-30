@@ -9,6 +9,7 @@ material risk.
 |---|---|---|
 | Parser-independent binding model contract | Accepted | 2026-10-29 |
 | Analysis backend: Libadalang vs Dmitry Kazakov's Ada Syntax Analyzer | Accepted (Libadalang) | 2026-10-29 |
+| Interchange format between backend and main crate | Accepted (house line-oriented text; JSON deferred) | 2026-10-29 |
 | HAC declaration mechanism: `with Import => True` placement (nested vs package spec) | Discussing | 2026-10-29 |
 | Boolean mapping route: generic enum vs Integer | Discussing | 2026-10-29 |
 | Manifest design (generated artefacts policy): check-in policy, generation during builds, source hashes, version coupling, JSON format | Discussing | 2026-10-29 |
@@ -182,6 +183,17 @@ queries, integration, and licensing, not whether to write a parser.
 - The Libadalang 26.0.0 probe builds and runs standalone under GNAT
   FSF 15.2.0 via Alire (isolated trial crate, 16 s build); the Kazakov
   probe builds under GNAT 16.1. Both run to completion on the fixture.
+- Integration attempt of Libadalang 25.0.0 into the main crate with
+  GNAT 16.1.0: the dependency solution resolves (libadalang, GNATCOLL,
+  langkit_support, xmlada, vss, prettier_ada, libgpr/libgpr2, adasat,
+  all 25.0.0) but the build fails — `libgpr2` 25.0.0 sources do not
+  compile under GNAT 16.1.0 (legality errors such as
+  `gpr2-project-import-set.ads:95:09: component "Ref" of type
+  "Constant_Reference_Type" has limited type`), and `libgpr2` 26.0.0
+  declares `gnat<16`. Under GNAT 16, no indexed Libadalang release
+  builds today; `gnat_native` 16.2.0-pre0 exists in the index but is
+  untested. The main crate was restored to a green build after the
+  attempt.
 
 ## Decision
 
@@ -190,6 +202,14 @@ Syntax Analyzer only as comparison evidence. The binding model
 requires resolved type references, subtype chains, and statically
 evaluated constraints; Libadalang provides them natively while
 Kazakov's analyzer stops at name lookup inside the parsed sources.
+
+Integration follows the isolation architecture: the backend lives in
+its own Alire crate (`tools/libadalang_backend`), pinned to the GNAT
+15.x toolchain that Libadalang supports, and communicates with the
+main generator — which stays on GNAT 16 — through a stable textual
+model dump produced by a dedicated executable. The main crate never
+links Libadalang; the interchange format is the contract between the
+two crates.
 
 ## Rationale
 
@@ -209,12 +229,12 @@ dump), not on syntax coverage.
 - Implement backend #1 (package specification to `Hac_Bindgen.Model`)
   with Libadalang; `tools/Kazakov_Analyzer_trial` is kept as decision
   evidence and can be dropped once backend #1 lands.
-- Settle the Libadalang version against the project's GNAT minimum
-  before integration: 26.0.0 resolves to GNAT 15 (below the project
-  minimum of 16, acceptable only in the isolated trial so far), while
-  25.0.0 selects GNAT 16.1.0 but has not yet been built against
-  hac_bindgen. Do not lower the project's GNAT minimum to use
-  Libadalang 26.
+- Backend isolation resolves the version conflict: the backend crate
+  is pinned to GNAT 15.x and Libadalang 26.0.0, the main crate keeps
+  its GNAT 16 minimum, and the only coupling is the dump format.
+- Do not link Libadalang into the main crate until upstream `libgpr2`
+  supports GNAT 16 (contributing the port there is the medium-term
+  fix; `gnat_native` 16.2.0-pre0 remains untested).
 - Complete the license and redistribution review of the Libadalang
   dependency closure (`GNATCOLL` crates are
   `GPL-3.0-or-later WITH GCC-exception-3.1`; initial inventory only)
@@ -225,6 +245,73 @@ dump), not on syntax coverage.
   backend #1.
 - GNAT remains the legality authority; Libadalang diagnostics are
   analysis inputs, not a replacement for the host compiler.
+
+### Interchange format between backend and main crate
+
+Status: Accepted (house format type; grammar to be specified)
+Date: 2026-10-29
+Related: [analysis backend evaluation](#analysis-backend-evaluation);
+[interchange format proposal](../features/A003_interchange_dump.md);
+[interchange format concern](concerns.md)
+
+## Context
+
+With the backend isolated in its own crate, the dump it writes is the
+only coupling with the main generator. Both producers and consumers
+are programs under this repository's control; the dump must also feed
+bbt golden files and stay diffable across machines.
+
+## Options considered
+
+### JSON
+
+- Benefits: interoperability with external tools (IDEs, SARIF, the
+  manifest gadget) and off-the-shelf consumers.
+- Costs and risks: needs a parser or a dependency on the main crate
+  side; punctuation noise makes golden files harder to read; no
+  external consumer exists today.
+
+### TOML
+
+- Benefits: human-friendly configuration syntax.
+- Costs and risks: designed for hand-written configuration, not
+  program output — serializing nested structures (profiles, parameters,
+  resolved types) is verbose, and no pure-Ada TOML parser exists under
+  GNAT 16; writing one is disproportionate.
+
+### House line-oriented text
+
+- Benefits: trivial to emit and to parse (both sides are ours),
+  readable and diffable golden files for bbt, grammar specifiable in a
+  page, zero dependencies; in line with the gcc-diagnostics style
+  already used for warnings.
+- Costs and risks: no external interoperability; the grammar must be
+  frozen and versioned once consumers appear.
+
+## Decision
+
+Use a house line-oriented text format for the backend-to-main-crate
+dump. Keep it deterministic and machine-parsable: one declaration per
+line with tagged fields and canonical locations. Defer JSON to the
+manifest design (it remains a possible *view* of the same model if the
+manifest gadget becomes real); reject TOML for program output. The
+exact grammar is specified in
+[the interchange format proposal](../features/A003_interchange_dump.md).
+
+## Rationale
+
+The only current consumer is hac_bindgen itself, plus bbt scenarios.
+A house format optimizes both without dependencies, while JSON's
+single benefit (external interoperability) belongs to the manifest
+discussion, not to this internal contract.
+
+## Consequences
+
+- The backend executable and the main crate reader implement the same
+  grammar; until the grammar proposal is accepted and the reader
+  exists, the probe-style dump stays provisional.
+- Changing the grammar after backend #1 consumes it requires a version
+  header in the dump.
 
 ## Template for a new discussion
 

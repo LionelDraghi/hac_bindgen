@@ -172,6 +172,7 @@ Executable features (`features/`):
 | ID | Feature | Page | Status |
 |---|---|---|---|
 | A001 | Command-line interface | [A001_cli.md](features/A001_cli.md) | partially implemented |
+| A003 | Analysis backend interchange dump | [A003_interchange_dump.md](features/A003_interchange_dump.md) | implemented |
 | C001 | Usage and input errors | [C001_usage_errors.md](features/C001_usage_errors.md) | partially implemented |
 
 Proposed features ([`proposed/`](proposed/), specified, not executable):
@@ -182,7 +183,7 @@ Proposed features ([`proposed/`](proposed/), specified, not executable):
 | B001 | Non-bindable constructs: warnings | [B001_non_bindable_constructs.md](proposed/B001_non_bindable_constructs.md) |
 | C002 | Runtime boundary errors | [C002_boundary_errors.md](proposed/C002_boundary_errors.md) |
 
-Next free identifiers: `A003`, `B002`, `C003`.
+Next free identifiers: `A004`, `B002`, `C003`.
 
 ## 4. Cross-reference table
 

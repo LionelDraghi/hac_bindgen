@@ -44,7 +44,7 @@ mkdir -p $(BBT_ARTIFACTS); \
 cd tests && $(BBT) -nt --yes --cleanup=full $$files
 endef
 
-.PHONY: all help check build backend witness metrics clean $(SCENARIO_TARGETS)
+.PHONY: all help check build release backend witness metrics clean $(SCENARIO_TARGETS)
 
 all: check
 
@@ -54,6 +54,7 @@ help:
 	@echo "  make check  build (tool + backend), then run the bbt executable documentation"
 	@echo "  make <scenario prefix, case insensitive>  run one scenario page, e.g. make a003, make b001"
 	@echo "  make build  build the tool only (validation mode)"
+	@echo "  make release  build the tool in release mode"
 	@echo "  make backend  build the Libadalang analysis backend crate"
 	@echo "  make metrics  run gnatmetric over src/, report in artifacts/metrics"
 	@echo "  make clean  remove build and test artifacts"
@@ -71,6 +72,13 @@ $(SCENARIO_TARGETS): build backend
 build:
 	@echo === building hac_bindgen
 	$(ALR) build
+	@echo OK
+
+#  Release-mode build: no run-time checks, optimized ([release
+#  procedure], step 5).
+release:
+	@echo === building hac_bindgen in release mode
+	$(ALR) build --release
 	@echo OK
 
 # The analysis backend is a separate Alire crate on the GNAT 15.x

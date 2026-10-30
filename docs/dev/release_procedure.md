@@ -12,7 +12,7 @@ project-specific additions; read both documents together.
 | Release-mode build | `make release` |
 | Remote | `origin` |
 | Release branch | `main` |
-| Required CI checks | `<workflows, or none>` |
+| Required CI checks | none (no GitHub Actions workflow) |
 
 ## Project-specific additions
 

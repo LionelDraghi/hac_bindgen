@@ -10,8 +10,8 @@ status, version reporting. The detailed per-command behavior of
 Command surface:
 
 ```text
-hac-bindgen generate SOURCE... [--output-dir DIR]
-hac-bindgen check    SOURCE... [--output-dir DIR]
+hac-bindgen generate SOURCE... [--output-dir DIR] [--hac-package NAME]
+hac-bindgen check    SOURCE...
 hac-bindgen --version
 hac-bindgen --help
 ```
@@ -20,13 +20,14 @@ Planned options, added as the features that need them land:
 
 ```text
 --native-package NAME   name of the generated native child package
---hac-package NAME      name of the generated HAC declaration package
 --manifest FILE         path of the binding manifest (gadget)
 --diagnostics text|gcc  warning format (gadget)
 ```
 
 `generate` analyses the supplied package specification(s), binds what it
-can and writes the generated files ([S006]). `check` runs the same
+can and writes the generated files ([S006]); `--hac-package` renames
+the generated HAC declaration package when the API name does not fit
+the project layout ([A002]). `check` runs the same
 traversal and reports the bindable / non-bindable classification
 without writing any generated file. Both report the traversal summary:
 what was bound, what was warned, and why — with the counts and, for the
@@ -54,8 +55,8 @@ appears in every generated artefact of a run.
 - When I successfully run `../bin/hac-bindgen --help`
 - Then the output is
   ```text
-  usage: hac-bindgen generate SOURCE... [--output-dir DIR]
-         hac-bindgen check SOURCE... [--output-dir DIR]
+  usage: hac-bindgen generate SOURCE... [--output-dir DIR] [--hac-package NAME]
+         hac-bindgen check SOURCE...
          hac-bindgen --version
          hac-bindgen --help
   ```
@@ -68,8 +69,8 @@ Invoking `hac-bindgen` without any argument is equivalent to
 - When I successfully run `../bin/hac-bindgen`
 - Then the output is
   ```text
-  usage: hac-bindgen generate SOURCE... [--output-dir DIR]
-         hac-bindgen check SOURCE... [--output-dir DIR]
+  usage: hac-bindgen generate SOURCE... [--output-dir DIR] [--hac-package NAME]
+         hac-bindgen check SOURCE...
          hac-bindgen --version
          hac-bindgen --help
   ```
@@ -80,8 +81,8 @@ Invoking `hac-bindgen` without any argument is equivalent to
 - Then the error output is
   ```text
   error: invalid command '--frobnicate'
-  usage: hac-bindgen generate SOURCE... [--output-dir DIR]
-         hac-bindgen check SOURCE... [--output-dir DIR]
+  usage: hac-bindgen generate SOURCE... [--output-dir DIR] [--hac-package NAME]
+         hac-bindgen check SOURCE...
          hac-bindgen --version
          hac-bindgen --help
   ```

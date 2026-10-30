@@ -8,13 +8,18 @@
 with Ada.Command_Line;
 with Ada.Directories;
 with Ada.Exceptions;
+with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with Hac_Bindgen.Analysis;
+with Hac_Bindgen.Generation;
+with Hac_Bindgen.Model;
+with Hac_Bindgen.Traversal;
 
 package body Hac_Bindgen.CLI is
 
    package CL  renames Ada.Command_Line;
    package Dir renames Ada.Directories;
+   package SU  renames Ada.Strings.Unbounded;
    package TIO renames Ada.Text_IO;
 
    use type Dir.File_Kind;
@@ -43,8 +48,11 @@ package body Hac_Bindgen.CLI is
 
    procedure Put_Usage (Stream : TIO.File_Type) is
    begin
-      TIO.Put_Line (Stream, "usage: hac-bindgen generate SOURCE... [--output-dir DIR]");
-      TIO.Put_Line (Stream, "       hac-bindgen check SOURCE... [--output-dir DIR]");
+      TIO.Put_Line
+        (Stream,
+         "usage: hac-bindgen generate SOURCE... [--output-dir DIR]"
+         & " [--hac-package NAME]");
+      TIO.Put_Line (Stream, "       hac-bindgen check SOURCE...");
       TIO.Put_Line (Stream, "       hac-bindgen --version");
       TIO.Put_Line (Stream, "       hac-bindgen --help");
    end Put_Usage;
@@ -86,55 +94,122 @@ package body Hac_Bindgen.CLI is
          elsif Command = "generate"
            or else Command = "check"
          then
-            if CL.Argument_Count < 2 then
-               Fail ("missing source file");
-            end if;
+            declare
+               use SU;
 
-            for I in 2 .. CL.Argument_Count loop
-               declare
-                  Source : constant String := CL.Argument (I);
+               Output_Dir  : Unbounded_String;
+               Hac_Package : Unbounded_String;
+               Sources     : Unbounded_String;
+
+               --  Options and sources, in any order ([S010]): the
+               --  arguments are parsed first, the sources are
+               --  processed afterwards.
+               procedure Parse_Arguments is
+                  I : Positive := 2;
                begin
-                  exit when Source (Source'First) = '-';  --  next option
-                  if not File_Exists (Source) then
-                     Fail ("cannot read '" & Source & "'");
-                  end if;
-
-                  if Command = "check" then
-                     --  The analysis front-end builds the model, then
-                     --  the traversal classifies it and prints the
-                     --  warnings and the summary on standard output
-                     --  ([S006], B001).
+                  while I <= CL.Argument_Count loop
+                     declare
+                        Arg : constant String := CL.Argument (I);
                      begin
-                        Analysis.Check (Source);
-                     exception
-                        when Error : Analysis.Analysis_Error =>
-                           Fail (Ada.Exceptions.Exception_Message (Error),
-                                 With_Usage => False);
-                     end;
-                  end if;
-               end;
-            end loop;
+                        if Arg = "--output-dir"
+                          or else Arg = "--hac-package"
+                        then
+                           if Command = "check" then
+                              Fail ("option '" & Arg
+                                    & "' applies to generate only");
+                           end if;
+                           if I = CL.Argument_Count then
+                              Fail ("option '" & Arg & "' needs a value");
+                           end if;
+                           if Arg = "--output-dir" then
+                              Output_Dir := To_Unbounded_String
+                                (CL.Argument (I + 1));
+                           else
+                              Hac_Package := To_Unbounded_String
+                                (CL.Argument (I + 1));
+                           end if;
+                           I := I + 2;
 
-            if Command = "check" then
-               --  Every source analyzed and validated; the traversal
-               --  and the generation are M3/M4 work.
-               CL.Set_Exit_Status (CL.Success);
-            else
-               --  M4: generation.
-               TIO.Put_Line
-                 (TIO.Standard_Error,
-                  Hac_Bindgen.Tool_Name & ": generate is not implemented yet"
-                  & " (see docs/roadmap.md, M4)");
-               CL.Set_Exit_Status (CL.Failure);
-            end if;
+                        elsif Arg (Arg'First) = '-' then
+                           Fail ("unknown option '" & Arg & "'");
+
+                        else
+                           Sources := Sources & Arg & " ";
+                           I := I + 1;
+                        end if;
+                     end;
+                  end loop;
+
+                  if Sources = Null_Unbounded_String then
+                     Fail ("missing source file");
+                  end if;
+               end Parse_Arguments;
+
+               --  One source: the same analysis, classification and
+               --  report for both commands ([S006]); generate adds
+               --  the facade files ([A002]).
+               procedure Process_Source (Arg : String) is
+               begin
+                  if not File_Exists (Arg) then
+                     Fail ("cannot read '" & Arg & "'");
+                  end if;
+
+                  begin
+                     if Command = "check" then
+                        Analysis.Check (Arg);
+                     else
+                        declare
+                           The_Model : constant Model.Package_Model :=
+                             Analysis.Analyze (Arg);
+                           The_Result : constant Model.Analysis_Result :=
+                             Traversal.Classify (The_Model);
+                        begin
+                           Traversal.Report (The_Model, The_Result);
+                           Generation.Generate
+                             (The_Model,
+                              The_Result,
+                              To_String (Hac_Package),
+                              To_String (Output_Dir));
+                        end;
+                     end if;
+                  exception
+                     when Error : Analysis.Analysis_Error
+                                | Generation.Generation_Error =>
+                        Fail (Ada.Exceptions.Exception_Message (Error),
+                              With_Usage => False);
+                  end;
+               end Process_Source;
+
+               procedure Process_All_Sources is
+                  Source_List : constant String := To_String (Sources);
+                  First : Positive := Source_List'First;
+               begin
+                  for I in Source_List'Range loop
+                     if Source_List (I) = ' ' then
+                        if I > First then
+                           Process_Source (Source_List (First .. I - 1));
+                        end if;
+                        First := I + 1;
+                     end if;
+                  end loop;
+               end Process_All_Sources;
+
+            begin
+               Parse_Arguments;
+               Process_All_Sources;
+            end;
+
+            --  Every source processed; the warnings were reported
+            --  above, the exit status stays success.
+            CL.Set_Exit_Status (CL.Success);
 
          else
             Fail ("invalid command '" & Command & "'");
          end if;
+      exception
+         when Run_Error =>
+            null;  --  message and status already emitted by Fail
       end;
-   exception
-      when Run_Error =>
-         null;  --  message and status already emitted by Fail
    end Run;
 
 end Hac_Bindgen.CLI;

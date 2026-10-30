@@ -98,6 +98,24 @@ package Hac_Bindgen.Model is
             Object_Type : Type_Reference;
          when Type_Declaration =>
             Declared_Kind : Type_Kind := Unknown_Type;
+            Is_Subtype    : Boolean := False;
+            --  True when the generator can mirror the declaration on
+            --  the HAC side: enumerations, and subtypes of known
+            --  category with a statically known constraint. HAC
+            --  rejects range, derived and digits type definitions, so
+            --  those are not mirrorable: the HAC-side declarations
+            --  use the mapped root type instead, while the native
+            --  conversions keep instantiating on the real type (the
+            --  range checks are preserved).
+            Mirrorable    : Boolean := False;
+            --  The declaration text after "is", exactly as written in
+            --  the source (the reader carries it from the dump), so
+            --  the generator can mirror the type verbatim on the HAC
+            --  side: "is (Red, Green, Blue)", "is new Integer range
+            --  1 .. 10", "is My_Int range 1 .. 5". A dynamic
+            --  constraint appears as "range (dynamic)" and blocks the
+            --  exact mirroring.
+            Mirror_Text   : Text;
          when Other_Declaration =>
             --  A declaration the analysis backend could not represent:
             --  the dump carries the parser kind name, which drives the

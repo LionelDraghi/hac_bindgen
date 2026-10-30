@@ -327,6 +327,7 @@ package body Hac_Bindgen.Traversal is
                   exit;
                end if;
             end;
+
          end loop;
 
          if not Is_Warned (W)
@@ -412,17 +413,16 @@ package body Hac_Bindgen.Traversal is
                   end case;
 
                when M.Object_Declaration =>
-                  declare
-                     D : constant Diagnosis :=
-                       Boundary_Diagnosis (Declaration.Object_Type);
-                  begin
-                     if Has_Diagnosis (D) then
-                        W := Warn
-                          (D,
-                           SU.To_String (Declaration.Source_Name),
-                           Declaration.Location);
-                     end if;
-                  end;
+                  --  The M2 evidence demonstrates no variable or
+                  --  constant mechanism across the boundary: objects
+                  --  are not bound by this profile.
+                  W := Warn
+                    (Diagnose
+                       (Not_Covered_Id,
+                        "object declarations are not bound by the current"
+                        & " binding profile"),
+                     SU.To_String (Declaration.Source_Name),
+                     Declaration.Location);
 
                when M.Other_Declaration =>
                   declare

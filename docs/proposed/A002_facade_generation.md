@@ -39,8 +39,8 @@ operation requires no handwritten glue ([S009]).
 - Strings and `VString` boundaries (M6).
 - Handles and enumeration-rich profiles (M6, future `Annn` pages).
 - Several bound packages in one run (M6).
-- The binding manifest (gadget), the `--native-package`,
-  `--hac-package` and `--manifest` options (A001 planned options).
+- The binding manifest (gadget) and the `--native-package` and
+  `--manifest` options (A001 planned options).
 - Runtime boundary errors: generated callbacks let every exception
   propagate to HAC's error mechanism ([S007]); their observable
   behavior is C002's subject.
@@ -90,7 +90,7 @@ in the output directory (default: the current directory):
 | File | Side | Content |
 |---|---|---|
 | `geometry.ads` | HAC | The package the script `with`es: the bound subprogram declarations (functions as functions), the mirrored bindable types, and — in the private part — one imported procedure per bound operation |
-| `geometry.adb` | HAC | Only when the API has functions: the wrapper bodies calling the imported procedures |
+| `geometry.adb` | HAC | The package body: empty when the API has no function, otherwise the wrapper bodies calling the imported procedures — HAC requires a body as soon as the spec declares subprograms, imported or not |
 | `geometry_native.ads` | native | The `Register_All (BD : HAC_Sys.Builder.Build_Data)` entry point |
 | `geometry_native.adb` | native | One callback per bound operation, the conversion instantiations it needs, and `Register_All` |
 
@@ -148,10 +148,27 @@ Per the M2 evidence (`docs/dev/hac_interfacing_notes.md`):
   calls the imported procedure through a local result variable — the
   witness pattern (`Sum_Callback` wrapped by the HAC function `Sum`),
   generated instead of handwritten.
-- Bindable types used by bound profiles are mirrored on the HAC side:
-  enumerations verbatim; integer and float derived types and subtypes
-  with their range or digits constraint. A type used by no bound
-  profile is not mirrored.
+- Bindable types used by bound profiles are mirrored on the HAC side,
+  exactly as declared: the generated HAC-side declaration repeats the
+  source declaration (`type Shade is (Red, Green, Blue);`,
+  `type Small is new Integer range 1 .. 10;`,
+  `subtype Sub_Int is Small range 1 .. 5;`). This is possible because
+  the model now carries the mirror text of each type declaration, the
+  way it carries type categories; a declaration with a dynamic
+  constraint cannot be mirrored exactly and is warned out
+  (`HACB0013`) instead of being mirrored lossy. A type used by no
+  bound profile is not mirrored.
+- Conversion instantiations are generated per source type mark, not
+  per root type: a parameter of a subtype converts through its own
+  subtype, so the native range check applies exactly as in the M2
+  witness (`witness_range_error`).
+- The HAC-side package name defaults to the API name; the
+  `--hac-package NAME` option renames it (the generated HAC-side
+  files then follow that name's GNAT file naming, e.g.
+  `hac_calc_api.ads`), which lets the generated HAC-side files live in
+  the same directory tree as the real API without a duplicate unit in
+  GNAT's source path. The registration names follow the HAC-side
+  package name (`HAC_CALC_API.PING`).
 - The private part holds only what the public declarations need;
   nothing of the non-bindable API leaks into the generated files
   ([S006], [S009]).
@@ -195,14 +212,16 @@ construction.
 ## Executable scenarios
 
 Generation-only scenarios compare the produced files; end-to-end
-scenarios compile and run the real chain ([S008]). All run from
-`tests/`.
+scenarios compile and run the real chain ([S008]), through the harness
+of the specification above: the scenario files land in `run/`, the
+witness is built there and runs the scenario's script. All scenarios
+run from `tests/`.
 
 | Scenario | Behavior |
 |---|---|
 | A002-01 | a script calls a bound procedure end to end through a witness application |
 | A002-02 | scalar round trips: integer, float, boolean survive the boundary |
-| A002-03 | user-defined scalars: range type, enumeration, float subtype round trips |
+| A002-03 | user-defined scalars: range type, enumeration, subtype round trips |
 | A002-04 | a bound function is a real HAC function for the script |
 | A002-05 | the generated files cover the bound part only |
 | A002-07 | two runs produce byte-identical files |
@@ -210,6 +229,251 @@ scenarios compile and run the real chain ([S008]). All run from
 
 A002-06 (copy-back), strings, handles and multi-package scenarios are
 M6 work and get their own scenarios then.
+
+### Scenario: a script calls a bound procedure end to end
+
+- Given the new directory `run`
+- Given the new file `run/ping_api.ads` containing
+  ```ada
+  package Ping_Api is
+     procedure Ping (X : in Integer);
+  end Ping_Api;
+  ```
+- Given the new file `run/ping_api.adb` containing
+  ```ada
+  with Ada.Text_IO;
+  package body Ping_Api is
+     procedure Ping (X : in Integer) is
+     begin
+        Ada.Text_IO.Put_Line ("native: Ping" & Integer'Image (X));
+     end Ping;
+  end Ping_Api;
+  ```
+- When I successfully run `../bin/hac-bindgen generate run/ping_api.ads --output-dir run --hac-package HAC_Ping_Api`
+- Given the new file `run/witness_binding.ads` containing
+  ```ada
+  with Ping_Api_Native;
+  package Witness_Binding renames Ping_Api_Native;
+  ```
+- Given the new file `run/ping_script.adb` containing
+  ```ada
+  with HAC_Ping_Api;
+  procedure Ping_Script is
+  begin
+     HAC_Ping_Api.Ping (42);
+  end Ping_Script;
+  ```
+- When I successfully run shell `alr exec -- gprbuild -q -P e2e/witness.gpr`
+- When I successfully run `./run/witness_main run/ping_script.adb`
+- Then I get
+  ```text
+  native: Ping 42
+  E2E: script completed.
+  ```
+
+### Scenario: scalar round trips
+
+- Given the new directory `run`
+- Given the new file `run/scalar_api.ads` containing
+  ```ada
+  package Scalar_Api is
+     procedure Check
+       (I : in Integer;
+        R : in Long_Float;
+        B : in Boolean);
+  end Scalar_Api;
+  ```
+- Given the new file `run/scalar_api.adb` containing
+  ```ada
+  with Ada.Text_IO;
+  package body Scalar_Api is
+     procedure Check
+       (I : in Integer;
+        R : in Long_Float;
+        B : in Boolean)
+     is
+     begin
+       if I = 42 and then R = 1.5 and then B then
+          Ada.Text_IO.Put_Line ("native: values survived");
+       else
+          Ada.Text_IO.Put_Line ("native: MISMATCH");
+       end if;
+     end Check;
+  end Scalar_Api;
+  ```
+- When I successfully run `../bin/hac-bindgen generate run/scalar_api.ads --output-dir run --hac-package HAC_Scalar_Api`
+- Given the new file `run/witness_binding.ads` containing
+  ```ada
+  with Scalar_Api_Native;
+  package Witness_Binding renames Scalar_Api_Native;
+  ```
+- Given the new file `run/scalar_script.adb` containing
+  ```ada
+  with HAC_Scalar_Api;
+  procedure Scalar_Script is
+  begin
+     HAC_Scalar_Api.Check (42, 1.5, True);
+  end Scalar_Script;
+  ```
+- When I successfully run shell `alr exec -- gprbuild -q -P e2e/witness.gpr`
+- When I successfully run `./run/witness_main run/scalar_script.adb`
+- Then I get
+  ```text
+  native: values survived
+  E2E: script completed.
+  ```
+
+### Scenario: user-defined scalars round trips
+
+- Given the new directory `run`
+- Given the new file `run/shade_api.ads` containing
+  ```ada
+  package Shade_Api is
+     type Shade is (Red, Green, Blue);
+     type Small is range -100 .. 100;
+     subtype Narrow is Small range -10 .. 10;
+     procedure Check
+       (C : in Shade;
+        S : in Small;
+        N : in Narrow);
+  end Shade_Api;
+  ```
+- Given the new file `run/shade_api.adb` containing
+  ```ada
+  with Ada.Text_IO;
+  package body Shade_Api is
+     procedure Check
+       (C : in Shade;
+        S : in Small;
+        N : in Narrow)
+     is
+     begin
+        if C = Green and then S = 42 and then N = -7 then
+           Ada.Text_IO.Put_Line ("native: values survived");
+        else
+           Ada.Text_IO.Put_Line ("native: MISMATCH");
+        end if;
+     end Check;
+  end Shade_Api;
+  ```
+- When I successfully run `../bin/hac-bindgen generate run/shade_api.ads --output-dir run --hac-package HAC_Shade_Api`
+- Given the new file `run/witness_binding.ads` containing
+  ```ada
+  with Shade_Api_Native;
+  package Witness_Binding renames Shade_Api_Native;
+  ```
+- Given the new file `run/shade_script.adb` containing
+  ```ada
+  with HAC_Shade_Api;
+  procedure Shade_Script is
+  begin
+     HAC_Shade_Api.Check (HAC_Shade_Api.Green, 42, -7);
+  end Shade_Script;
+  ```
+- When I successfully run shell `alr exec -- gprbuild -q -P e2e/witness.gpr`
+- When I successfully run `./run/witness_main run/shade_script.adb`
+- Then I get
+  ```text
+  native: values survived
+  E2E: script completed.
+  ```
+
+### Scenario: a bound function is a real HAC function
+
+- Given the new directory `run`
+- Given the new file `run/func_api.ads` containing
+  ```ada
+  package Func_Api is
+     function Twice (X : in Integer) return Integer;
+  end Func_Api;
+  ```
+- Given the new file `run/func_api.adb` containing
+  ```ada
+  package body Func_Api is
+     function Twice (X : in Integer) return Integer is
+     begin
+        return 2 * X;
+     end Twice;
+  end Func_Api;
+  ```
+- When I successfully run `../bin/hac-bindgen generate run/func_api.ads --output-dir run --hac-package HAC_Func_Api`
+- Given the new file `run/witness_binding.ads` containing
+  ```ada
+  with Func_Api_Native;
+  package Witness_Binding renames Func_Api_Native;
+  ```
+- Given the new file `run/func_script.adb` containing
+  ```ada
+  with HAC_Func_Api;
+  procedure Func_Script is
+     V : Integer;
+  begin
+     V := HAC_Func_Api.Twice (21);
+     V := V + 1;
+  end Func_Script;
+  ```
+- When I successfully run shell `alr exec -- gprbuild -q -P e2e/witness.gpr`
+- When I successfully run `./run/witness_main run/func_script.adb`
+- Then I get
+  ```text
+  E2E: script completed.
+  ```
+
+### Scenario: the generated files cover the bound part only
+
+- Given the new file `mixed_probe.ads` containing
+  ```ada
+  package Mixed_Probe is
+     type Point is record
+        X, Y : Integer;
+     end record;
+     procedure Ping (X : in Integer);
+     procedure Move (P : in Point);
+     function Get (X : in Integer) return Integer;
+  end Mixed_Probe;
+  ```
+- When I run `../bin/hac-bindgen generate mixed_probe.ads --output-dir gen`
+- Then there is no error
+- And the output contains `warning HACB0005`
+- And the output contains `2 operations bound, 1 not bound`
+- And there is a file `gen/mixed_probe.ads`
+- And the file `gen/mixed_probe.ads` contains
+  ```
+  procedure Ping (X : in Integer) with Import => True;
+  ```
+- And the file `gen/mixed_probe.ads` contains
+  ```
+  function Get (X : in Integer) return Integer;
+  ```
+- And the file `gen/mixed_probe.ads` does not contain `Move`
+- And the file `gen/mixed_probe_native.adb` does not contain `Move`
+
+### Scenario: two runs produce byte-identical files
+
+- Given the new file `mixed_probe.ads` containing
+  ```ada
+  package Mixed_Probe is
+     procedure Ping (X : in Integer);
+  end Mixed_Probe;
+  ```
+- When I successfully run `../bin/hac-bindgen generate mixed_probe.ads --output-dir gen1`
+- And I successfully run `../bin/hac-bindgen generate mixed_probe.ads --output-dir gen2`
+- Then I successfully run shell `diff -r gen1 gen2`
+
+### Scenario: every generated file carries the version header
+
+- Given the new file `mixed_probe.ads` containing
+  ```ada
+  package Mixed_Probe is
+     procedure Ping (X : in Integer);
+     function Get (X : in Integer) return Integer;
+  end Mixed_Probe;
+  ```
+- When I successfully run `../bin/hac-bindgen generate mixed_probe.ads --output-dir gen`
+- Then the file `gen/mixed_probe.ads` contains `Generated by hac-bindgen`
+- And the file `gen/mixed_probe_native.ads` contains `Generated by hac-bindgen`
+- And the file `gen/mixed_probe_native.adb` contains `Generated by hac-bindgen`
+- And there is a file `gen/mixed_probe.adb`
 
 ## Verification beyond bbt
 

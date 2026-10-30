@@ -207,19 +207,26 @@ package body Hac_Bindgen.Dump_Reader is
       end;
    end To_Location;
 
-   function Is_Digits (S : String) return Boolean is
+   --  A decimal integer, as spelled in constraint lines: an optional
+   --  sign, then digits ([A003], the bounds may be negative).
+   function Is_Decimal_Integer (S : String) return Boolean is
+      Signed : constant Boolean :=
+        S /= ""
+        and then (S (S'First) = '-' or else S (S'First) = '+');
+      Digit_Part : constant String :=
+        (if Signed then S (S'First + 1 .. S'Last) else S);
    begin
-      if S = "" then
+      if Digit_Part'Length = 0 then
          return False;
       end if;
 
-      for C of S loop
+      for C of Digit_Part loop
          if C not in '0' .. '9' then
             return False;
          end if;
       end loop;
       return True;
-   end Is_Digits;
+   end Is_Decimal_Integer;
 
    function Standard_Kind (Name : String) return M.Type_Kind is
    begin
@@ -453,7 +460,10 @@ package body Hac_Bindgen.Dump_Reader is
                            Source_Name => New_Name,
                            Canonical_Name => New_Name,
                            Location => Location, Parameters => <>,
-                           Declared_Kind => M.Unknown_Type);
+                           Declared_Kind => M.Unknown_Type,
+                           Is_Subtype => False,
+                           Mirrorable => False,
+                           Mirror_Text => SU.Null_Unbounded_String);
             when M.Object_Declaration =>
                Pending := (Kind => M.Object_Declaration, Id => Id,
                            Source_Name => New_Name,
@@ -555,6 +565,22 @@ package body Hac_Bindgen.Dump_Reader is
          return SU.To_String (Buffer);
       end Definition_Of;
 
+      --  "A B C" -> "A, B, C": rebuilds an aggregate from the
+      --  space-separated dump tokens (enum literal names contain no
+      --  space).
+      function Commas_Of (S : String) return String is
+         Buffer : SU.Unbounded_String;
+      begin
+         for I in S'Range loop
+            if S (I) = ' ' then
+               Buffer := Buffer & ", ";
+            else
+               Buffer := Buffer & S (I);
+            end if;
+         end loop;
+         return SU.To_String (Buffer);
+      end Commas_Of;
+
       ---------------------------------------------------------------------
       procedure Expect_Header (Line_No : Positive; Line : String) is
          Tokens : constant Token_Array := Tokens_Of (Line);
@@ -653,6 +679,10 @@ package body Hac_Bindgen.Dump_Reader is
               (Name     => Tok (Tokens, 2),
                Location => To_Location (Tok (Tokens, 4), Line_No),
                New_Kind => M.Type_Declaration);
+            Pending.Is_Subtype := True;
+            Pending.Mirrorable := True;
+            Pending.Mirror_Text :=
+              SU.To_Unbounded_String ("is " & Tok (Tokens, 6));
             Entities.Append
               (Entity_Info'
                 (Name      => SU.To_Unbounded_String (Tok (Tokens, 2)),
@@ -671,6 +701,16 @@ package body Hac_Bindgen.Dump_Reader is
               (Name     => Tok (Tokens, 2),
                Location => To_Location (Tok (Tokens, 4), Line_No),
                New_Kind => M.Type_Declaration);
+            declare
+               Literals : constant String :=
+                 Definition_Of (Tokens, 6);
+               --  The literals come space-separated; the mirror text
+               --  rebuilds the aggregate form.
+            begin
+               Pending.Mirrorable := True;
+               Pending.Mirror_Text :=
+                 SU.To_Unbounded_String ("is (" & Commas_Of (Literals) & ")");
+            end;
             Entities.Append
               (Entity_Info'
                 (Name      => SU.To_Unbounded_String (Tok (Tokens, 2)),
@@ -694,6 +734,9 @@ package body Hac_Bindgen.Dump_Reader is
                   Location => To_Location (Tok (Tokens, 4), Line_No),
                   New_Kind => M.Type_Declaration);
                Pending.Declared_Kind := Kind;
+               Pending.Mirror_Text :=
+                 SU.To_Unbounded_String
+                   ("is " & Definition_Of (Tokens, 6));
                Entities.Append
                  (Entity_Info'
                    (Name      => SU.To_Unbounded_String (Tok (Tokens, 2)),
@@ -802,14 +845,20 @@ package body Hac_Bindgen.Dump_Reader is
             if Tokens'Length = 2 then
                Expect (Tok (Tokens, 2) = "(dynamic)", Line_No,
                        "malformed constraint line");
+               Pending.Mirrorable := False;
+               Pending.Mirror_Text :=
+                 Pending.Mirror_Text & " range (dynamic)";
             else
                Expect (Tokens'Length = 4, Line_No, "malformed constraint line");
                Expect (Tok (Tokens, 3) = "..", Line_No,
                        "malformed constraint line");
-               Expect (Is_Digits (Tok (Tokens, 2)), Line_No,
+               Expect (Is_Decimal_Integer (Tok (Tokens, 2)), Line_No,
                        "malformed constraint line");
-               Expect (Is_Digits (Tok (Tokens, 4)), Line_No,
+               Expect (Is_Decimal_Integer (Tok (Tokens, 4)), Line_No,
                        "malformed constraint line");
+               Pending.Mirror_Text :=
+                 Pending.Mirror_Text & " range "
+                   & Tok (Tokens, 2) & " .. " & Tok (Tokens, 4);
             end if;
 
          else

@@ -74,6 +74,10 @@ stable key: it never changes meaning.
 - Only subprogram declarations count as operations in the summary;
   type, object and exception declarations appear only through their
   warnings.
+- Object declarations (variables and constants) are never bound by
+  the first profile — the M2 evidence demonstrates no variable or
+  constant mechanism across the boundary — so they always warn
+  `HACB0016`, whatever their type.
 - Each non-bindable construct is reported: declaration-level issues
   (overload, operator symbol) warn at the declaration location; each
   non-bindable parameter or result warns at its own location. A

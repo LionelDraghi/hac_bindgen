@@ -11,8 +11,8 @@ here the tool cannot do its job at all ([S007], [S010]).
 - Then the error output is
   ```text
   error: cannot read 'no_such_file.ads'
-  usage: hac-bindgen generate SOURCE... [--output-dir DIR]
-         hac-bindgen check SOURCE... [--output-dir DIR]
+  usage: hac-bindgen generate SOURCE... [--output-dir DIR] [--hac-package NAME]
+         hac-bindgen check SOURCE...
          hac-bindgen --version
          hac-bindgen --help
   ```

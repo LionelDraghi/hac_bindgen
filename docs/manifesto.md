@@ -116,6 +116,10 @@ witness application, HAC script — and bbt owns the expected output.
 ## 5. Architecture in one picture
 
 ```mermaid
+---
+config:
+  theme: base
+---
 flowchart TB
     APP["Application<br/>(rich native Ada API)"] --> BINDGEN["hac-bindgen"]
     FACADE["Hand-written scripting façade<br/>(optional)"] --> BINDGEN

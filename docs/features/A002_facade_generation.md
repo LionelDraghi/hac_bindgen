@@ -1,68 +1,48 @@
 # A002 — Facade generation: the scalar profile <!-- omit from toc -->
 
-Status: Proposed
-Source: roadmap M4 (the product), [S006], [S008], [S009]
+The core feature: hac-bindgen generates the scripting facade from the
+supplied API ([S006], [S009]). This page covers the first profile:
+one package, procedures and functions with `in` parameters, and the
+scalar types HAC supports natively. Wider traits (handles,
+enumerations, strings) get their own `Annn` page when their mapping is
+demonstrated end to end.
 
-## Need
+Out of scope, by design: `out` / `in out` parameters and copy-back
+(M6, [A002-06]), strings and `VString` boundaries (M6), handles (M6),
+several bound packages in one run (M6), the binding manifest and the
+`--native-package` and `--manifest` options (gadgets). The generated
+callbacks let every exception propagate to HAC's error mechanism
+([S007]); the runtime behavior is [C002](C002_boundary_errors.md)'s
+subject.
 
-The analysis path is complete: `hac-bindgen check` builds the binding
-model from the format-1 dump and classifies every declaration
-([B001]). Nothing is generated yet: the user has no façade. This is
-the core feature — the tool must turn the bound part of the model into
-the scripting façade: native callbacks, HAC declarations, and
-registration ([S006], [S009]).
+Guarantees: `generate` prints the same warnings and summary as
+`check` ([B001]) and writes the generated files for the bound part
+only; the generated native code compiles with GNAT, the generated HAC
+declarations compile with the real HAC compiler ([S012]); two runs on
+the same input produce byte-identical files ([S001]) and every
+generated file carries the generator version ([S002]); scalar
+parameters and results survive round trips with the conversions
+documented in the M2 evidence.
 
-## Intended outcome
+## Contents <!-- omit from toc -->
 
-`hac-bindgen generate SOURCE... [--output-dir DIR]` produces, for each
-bound package of the scalar profile, the complete glue a HAC script
-and a native application need — and nothing else. The generated code
-compiles with GNAT, the generated HAC declarations compile with the
-real HAC compiler, and a script calling the bound operations runs end
-to end in a witness application ([S008]). Adding one bindable
-operation requires no handwritten glue ([S009]).
+- [Generated file set](#generated-file-set)
+- [Callback layout](#callback-layout)
+- [HAC-side declarations](#hac-side-declarations)
+- [Command behavior](#command-behavior)
+- [End-to-end test harness](#end-to-end-test-harness)
+- [Executable scenarios](#executable-scenarios)
+  - [Scenario: a script calls a bound procedure end to end](#scenario-a-script-calls-a-bound-procedure-end-to-end)
+  - [Scenario: scalar round trips](#scenario-scalar-round-trips)
+  - [Scenario: user-defined scalars round trips](#scenario-user-defined-scalars-round-trips)
+  - [Scenario: a bound function is a real HAC function](#scenario-a-bound-function-is-a-real-hac-function)
+  - [Scenario: the generated files cover the bound part only](#scenario-the-generated-files-cover-the-bound-part-only)
+  - [Scenario: two runs produce byte-identical files](#scenario-two-runs-produce-byte-identical-files)
+  - [Scenario: every generated file carries the version header](#scenario-every-generated-file-carries-the-version-header)
+- [Verification beyond bbt](#verification-beyond-bbt)
+- [Design implications](#design-implications)
 
-## Scope
-
-- The `generate` command of the scalar profile: procedures and
-  functions with `in` parameters, scalar types (integers, floats,
-  booleans, enumerations and their user-defined variants).
-- The generated file set, the callback layout, the registration
-  scheme, the HAC-side declarations, and the function wrapping.
-- The witness application in `tests/` that the end-to-end scenarios
-  drive; only its generic HAC embedding bootstrap is handwritten
-  ([S009]).
-
-## Non-goals
-
-- `out` / `in out` parameters and copy-back (M6, [A002-06]).
-- Strings and `VString` boundaries (M6).
-- Handles and enumeration-rich profiles (M6, future `Annn` pages).
-- Several bound packages in one run (M6).
-- The binding manifest (gadget) and the `--native-package` and
-  `--manifest` options (A001 planned options).
-- Runtime boundary errors: generated callbacks let every exception
-  propagate to HAC's error mechanism ([S007]); their observable
-  behavior is C002's subject.
-
-## Acceptance criteria
-
-- `generate` on a mixed package exits `0`, prints the same warnings
-  and summary as `check` ([B001]), and writes the generated files for
-  the bound part only.
-- The generated native code compiles with GNAT; the generated HAC
-  package compiles with the real HAC compiler ([S012]).
-- A witness application embedding HAC registers the generated
-  bindings and runs a script that calls the bound operations; the
-  observed results match the script's expectations ([S008]).
-- Scalar parameters and results survive round trips with the
-  conversions documented in the M2 evidence.
-- Two runs on the same input produce byte-identical files ([S001]),
-  and every generated file carries the generator version ([S002]).
-
-## Specification
-
-### Generated file set
+## Generated file set
 
 The whole picture — what exists before, what hac-bindgen generates,
 and who compiles or interprets what:
@@ -114,7 +94,7 @@ Every generated file starts with a fixed header naming the generator
 and its version ([S002]): `--  Generated by hac-bindgen <version> — do
 not edit.`
 
-### Callback layout
+## Callback layout
 
 Per the M2 evidence (`docs/dev/hac_interfacing_notes.md`):
 
@@ -137,7 +117,7 @@ Per the M2 evidence (`docs/dev/hac_interfacing_notes.md`):
   the qualified name of the HAC-side declaration, uppercased;
   `Register_All` registers every bound operation of the package.
 
-### HAC-side declarations
+## HAC-side declarations
 
 - Each bound procedure is declared as a procedure with
   `with Import => True`, in the package private part, under the
@@ -173,7 +153,7 @@ Per the M2 evidence (`docs/dev/hac_interfacing_notes.md`):
   nothing of the non-bindable API leaks into the generated files
   ([S006], [S009]).
 
-### Command behavior
+## Command behavior
 
 `generate` runs the same analysis and traversal as `check` ([S006]):
 same warnings, same summary, same exit status rules — `0` with
@@ -181,7 +161,7 @@ warnings, `1` on analysis failure ([C001]), no generated file is
 written or left behind when the analysis fails. Files are written only
 after the whole classification succeeds.
 
-### End-to-end test harness
+## End-to-end test harness
 
 The end-to-end scenarios compile and run the real chain ([S008]). The
 harness bridges the static world of the compiled witness and the
@@ -496,17 +476,3 @@ keeps the API name; native adapter as `<Pkg>_Native` sibling;
 `<Op>_Callback` for the imported procedure of a function) is stated in
 the specification above and frozen with the first green end-to-end
 scenario.
-
-## Open questions
-
-None. The witness harness is specified above (the fixed-name
-`Witness_Binding` is a one-line package renames of the
-test-dependent generated adapter — verified against GNAT before being
-written down), and the HAC-side file naming is settled by HAC's own
-unit-to-file-name rule.
-
-## Finalization target
-
-`docs/features/A002_facade_generation.md` — the page replaces this
-proposal once its scenarios run green; the M4 roadmap items and the
-B001-02/B001-03 scenarios are updated in the same move.

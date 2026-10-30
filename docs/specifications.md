@@ -197,6 +197,7 @@ Executable features (`features/`):
 | ID | Feature | Page | Status |
 |---|---|---|---|
 | A001 | Command-line interface | [A001_cli.md](features/A001_cli.md) | partially implemented |
+| A002 | Facade generation: scalar profile | [A002_facade_generation.md](features/A002_facade_generation.md) | implemented |
 | A003 | Analysis backend interchange dump | [A003_interchange_dump.md](features/A003_interchange_dump.md) | implemented |
 | B001 | Non-bindable constructs: warnings | [B001_non_bindable_constructs.md](features/B001_non_bindable_constructs.md) | partially implemented |
 | C001 | Usage and input errors | [C001_usage_errors.md](features/C001_usage_errors.md) | implemented |
@@ -205,7 +206,6 @@ Proposed features ([`proposed/`](proposed/), specified, not executable):
 
 | ID | Feature | Page |
 |---|---|---|
-| A002 | Facade generation: scalar profile | [A002_facade_generation.md](proposed/A002_facade_generation.md) |
 | C002 | Runtime boundary errors | [C002_boundary_errors.md](proposed/C002_boundary_errors.md) |
 
 Next free identifiers: `A004`, `B002`, `C003`.

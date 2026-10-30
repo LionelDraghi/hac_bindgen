@@ -53,19 +53,19 @@ templates.
 Release trigger: version 0.1.0 ships when the first complete binding
 is generated end to end.
 
-- [ ] Native adapter generator: callbacks, conversions, registration
-- [ ] HAC declaration generator: `with Import => True` stubs
-- [ ] Witness application in `tests/`, wired into bbt scenarios
-- [ ] End-to-end: [A002-01] through [A002-05] green ([S008], [S009])
-- [ ] Determinism and version headers: [A002-07], [A002-08] ([S001], [S002])
+- [x] Native adapter generator: callbacks, conversions, registration
+- [x] HAC declaration generator: `with Import => True` stubs
+- [x] Witness application in `tests/`, wired into bbt scenarios
+- [x] End-to-end: [A002-01] through [A002-05] green ([S008], [S009])
+- [x] Determinism and version headers: [A002-07], [A002-08] ([S001], [S002])
 
 ## M5 — Warnings catalogue (essential)
 
 - [x] Warning format and stable identifiers ([B001])
-- [ ] First catalogue entries: overloads, access, private/tagged,
-      composites, `out`/`in out` ([B001-01] .. [B001-04]; the
-      classification is in, the scenarios B001-02/B001-03 wait for
-      `generate`)
+- [x] First catalogue entries: overloads, access, private/tagged,
+      composites, `out`/`in out` ([B001-01] .. [B001-04]; B001-02 is
+      the [A002-05] scenario, B001-03 is pinned by the identical
+      warning and summary formats of `check` and `generate`)
 - [x] Summary output: bound / not bound counts
 
 ## M6 — Wider profile (essential, incremental)

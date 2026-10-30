@@ -121,15 +121,15 @@ the roadmap and the specifications:
 | B001-05 | pointer-ish declarations are all warned out |
 | B001-06 | composite and tagged boundary declarations are warned out |
 | B001-07 | nothing is silently dropped |
-| B001-02 | the generated binding covers the bindable part only (planned, needs `generate` — A002, M4) |
-| B001-03 | `check` reports the same classification as `generate` (planned, needs `generate` — A002, M4) |
+| B001-02 | the generated binding covers the bindable part only (the [A002-05] scenario of [A002](A002_facade_generation.md)) |
+| B001-03 | `check` reports the same classification as `generate` (pinned by the identical warning and summary formats of the B001-01, B001-05 and [A002-05] scenarios) |
 
-B001-02 and B001-03 are specified but not executable yet: they join
-this page in bbt form when A002 lands. B001-02: a mixed package
-generates an adapter and HAC declarations containing only the bound
-subprograms ([S006], [S009]). B001-03: `check` and `generate` print
-the same warnings and summary; the `check` side is already pinned by
-B001-01 and B001-05.
+B001-02 and B001-03 have no scenario of their own: one authoritative
+description per behavior — B001-02 is exactly the A002-05 scenario (a
+mixed package generates only the bound subprograms, [S006], [S009]),
+and B001-03 follows from the single-traversal rule ([S006]): `check`
+and `generate` run the same classification path, and the scenarios
+pinning each side show the same warning and summary formats.
 
 ### Scenario: an overloading is warned out, the rest is classified
 

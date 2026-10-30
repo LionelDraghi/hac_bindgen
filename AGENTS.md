@@ -1,4 +1,4 @@
-# Project instructions
+# Project instructions <!-- omit from toc -->
 
 The shared instructions in [`ada-project-template/AGENTS.md`](https://github.com/LionelDraghi/ada-project-template/blob/main/AGENTS.md) apply in full.
 

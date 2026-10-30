@@ -1,4 +1,4 @@
-# A003 — Analysis backend interchange dump
+# A003 — Analysis backend interchange dump <!-- omit from toc -->
 
 The analysis backend lives in its own Alire crate
 (`tools/libadalang_backend`, GNAT 15.x + Libadalang 26.0.0) while the
@@ -7,6 +7,23 @@ main generator stays on GNAT 16 — see the backend isolation decision in
 The dump the backend writes is the only coupling between the two: the
 main crate builds `Hac_Bindgen.Model` from it and never links
 Libadalang.
+
+## Contents <!-- omit from toc -->
+
+- [The dump contract](#the-dump-contract)
+- [Executable scenarios](#executable-scenarios)
+  - [Scenario: dump identifies itself](#scenario-dump-identifies-itself)
+  - [Scenario: subprogram profiles with explicit modes](#scenario-subprogram-profiles-with-explicit-modes)
+  - [Scenario: type references resolve to their declaration](#scenario-type-references-resolve-to-their-declaration)
+  - [Scenario: enumeration literals in declaration order](#scenario-enumeration-literals-in-declaration-order)
+  - [Scenario: static values are evaluated](#scenario-static-values-are-evaluated)
+  - [Scenario: private part is separated from the public API](#scenario-private-part-is-separated-from-the-public-api)
+  - [Scenario: declarations that are not API declarations are skipped](#scenario-declarations-that-are-not-api-declarations-are-skipped)
+  - [Scenario: unusual declarations are reported, not dropped](#scenario-unusual-declarations-are-reported-not-dropped)
+  - [Scenario: dump is deterministic](#scenario-dump-is-deterministic)
+  - [Scenario: parse error produces no dump](#scenario-parse-error-produces-no-dump)
+- [Verification beyond bbt](#verification-beyond-bbt)
+- [Design implications](#design-implications)
 
 ## The dump contract
 
@@ -20,7 +37,7 @@ Header and framing:
 
 ```text
 hac-bindgen-backend <tool-version> format 1
-package <Package_Name>
+package <Package_Name> loc <file>:<line>:<col>
 public
   <declaration lines>
 private
@@ -34,6 +51,8 @@ end <Package_Name>
 - The `private` section is omitted when the package has no private
   part. The consumer decides bindability: only `public` declarations
   are candidates ([S006]).
+- Format 1 is frozen since the main-crate reader landed
+  (`Hac_Bindgen.Dump_Reader`); any change now requires a format bump.
 
 Declaration lines start with a kind keyword:
 
@@ -52,15 +71,19 @@ Subprogram profile lines are indented one level under their subprogram
 and appear in parameter declaration order:
 
 ```text
-    param <Name> mode <in|in out|out> type <Type_Mark> resolved <Identity>
+    param <Name> loc <file>:<line>:<col> mode <in|in out|out> type <Type_Mark> resolved <Identity>
     returns <Type_Mark> resolved <Identity>
 ```
 
-- `loc` designates the defining identifier, 1-based line and column;
-  `<file>` is the path exactly as supplied on the command line
+- `loc` designates the defining identifier — the package name, the
+  declared identifier, or the parameter identifier — 1-based line and
+  column; `<file>` is the path exactly as supplied on the command line
   (relative stays relative).
 - `mode` is always explicit, including the default `in`.
 - `type <Type_Mark>` preserves the source spelling of the type mark.
+  An object declaration without a type mark (anonymous number
+  declaration) is reported with the type mark `<anonymous>` and
+  `resolved unresolved`.
 - `resolved <Identity>` is one of:
   - `standard.<Name>` for a predefined entity;
   - `<file>:<line>:<col>` pointing at the defining `loc` of an entity
@@ -73,10 +96,15 @@ and appear in parameter declaration order:
 - `value` is present when the initializer is statically evaluable
   (format 1 covers integers only); otherwise `value (dynamic)`; it is
   absent when there is no initializer.
-- The `unhandled` line is the catch-all: a declaration whose kind is
-  not covered by the format is reported with the parser's kind name
-  rather than dropped ([S006], model contract). It is never emitted
-  for the kinds listed above.
+- `definition <Source_Spelling>` preserves the source text of the
+  type definition with runs of whitespace collapsed to single spaces,
+  so a declaration stays on one dump line; it is empty for an
+  incomplete type declaration.
+- `unhandled` lines: declarations that are not API declarations
+  (pragmas, use clauses) produce no dump line at all; a *declaration*
+  whose kind is not covered by the format is reported with the
+  parser's kind name rather than dropped ([S006], model contract). It
+  is never emitted for the kinds listed above.
 
 Failure mode: when the input cannot be parsed, no dump is produced —
 the backend exits nonzero and writes diagnostics on standard error.
@@ -112,10 +140,10 @@ its expected dump.
 - Then the output is
   ```text
   hac-bindgen-backend 0.1.0-dev format 1
-  package Probe_Fixture
+  package Probe_Fixture loc probe_fixture.ads:1:11
   public
     procedure Mutate loc probe_fixture.ads:2:16
-      param X mode in type Integer resolved standard.Integer
+      param X loc probe_fixture.ads:2:24 mode in type Integer resolved standard.Integer
   end Probe_Fixture
   ```
 
@@ -132,15 +160,15 @@ its expected dump.
 - Then the output is
   ```text
   hac-bindgen-backend 0.1.0-dev format 1
-  package Probe_Fixture
+  package Probe_Fixture loc probe_fixture.ads:1:11
   public
     procedure Mutate loc probe_fixture.ads:2:16
-      param X mode in type Integer resolved standard.Integer
-      param Y mode in out type Integer resolved standard.Integer
-      param Z mode out type Boolean resolved standard.Boolean
+      param X loc probe_fixture.ads:2:24 mode in type Integer resolved standard.Integer
+      param Y loc probe_fixture.ads:2:40 mode in out type Integer resolved standard.Integer
+      param Z loc probe_fixture.ads:2:60 mode out type Boolean resolved standard.Boolean
     function Add loc probe_fixture.ads:3:15
-      param Left mode in type Integer resolved standard.Integer
-      param Right mode in type Integer resolved standard.Integer
+      param Left loc probe_fixture.ads:3:20 mode in type Integer resolved standard.Integer
+      param Right loc probe_fixture.ads:3:26 mode in type Integer resolved standard.Integer
       returns Integer resolved standard.Integer
   end Probe_Fixture
   ```
@@ -158,12 +186,12 @@ its expected dump.
 - Then the output is
   ```text
   hac-bindgen-backend 0.1.0-dev format 1
-  package Probe_Fixture
+  package Probe_Fixture loc probe_fixture.ads:1:11
   public
     subtype Small loc probe_fixture.ads:2:14 base Integer resolved standard.Integer
       constraint 1 .. 10
     procedure Mutate loc probe_fixture.ads:3:16
-      param Y mode in out type Small resolved probe_fixture.ads:2:14
+      param Y loc probe_fixture.ads:3:24 mode in out type Small resolved probe_fixture.ads:2:14
   end Probe_Fixture
   ```
 
@@ -179,7 +207,7 @@ its expected dump.
 - Then the output is
   ```text
   hac-bindgen-backend 0.1.0-dev format 1
-  package Probe_Fixture
+  package Probe_Fixture loc probe_fixture.ads:1:11
   public
     enum Color loc probe_fixture.ads:2:11 literals Red Green Blue
   end Probe_Fixture
@@ -198,7 +226,7 @@ its expected dump.
 - Then the output is
   ```text
   hac-bindgen-backend 0.1.0-dev format 1
-  package Probe_Fixture
+  package Probe_Fixture loc probe_fixture.ads:1:11
   public
     subtype Small loc probe_fixture.ads:2:14 base Integer resolved standard.Integer
       constraint 1 .. 10
@@ -220,11 +248,60 @@ its expected dump.
 - Then the output is
   ```text
   hac-bindgen-backend 0.1.0-dev format 1
-  package Probe_Fixture
+  package Probe_Fixture loc probe_fixture.ads:1:11
   public
     constant Value loc probe_fixture.ads:2:6 type Integer resolved standard.Integer value 2
   private
     variable Internal loc probe_fixture.ads:4:6 type Integer resolved standard.Integer
+  end Probe_Fixture
+  ```
+
+### Scenario: declarations that are not API declarations are skipped
+
+Context lines (`with`, pragmas, `use` clauses) are not declarations of
+the package API: they produce no dump line.
+
+- Given the new file `probe_fixture.ads` containing
+  ```ada
+  with Ada.Strings.Unbounded;
+
+  package Probe_Fixture is
+     use Ada.Strings.Unbounded;
+  end Probe_Fixture;
+  ```
+- When I successfully run `../tools/libadalang_backend/bin/hac_bindgen_backend probe_fixture.ads`
+- Then the output is
+  ```text
+  hac-bindgen-backend 0.1.0-dev format 1
+  package Probe_Fixture loc probe_fixture.ads:3:11
+  public
+  end Probe_Fixture
+  ```
+
+### Scenario: unusual declarations are reported, not dropped
+
+A multi-line type definition stays on one line (whitespace collapsed),
+and a declaration whose kind format 1 does not cover — here an
+anonymous number declaration — is reported as `unhandled` ([S006]).
+
+- Given the new file `probe_fixture.ads` containing
+  ```ada
+  package Probe_Fixture is
+     type Rec is record
+        Field : Integer;
+     end record;
+
+     Answer : constant := 42;
+  end Probe_Fixture;
+  ```
+- When I successfully run `../tools/libadalang_backend/bin/hac_bindgen_backend probe_fixture.ads`
+- Then the output is
+  ```text
+  hac-bindgen-backend 0.1.0-dev format 1
+  package Probe_Fixture loc probe_fixture.ads:1:11
+  public
+    type Rec loc probe_fixture.ads:2:11 definition record Field : Integer; end record
+    unhandled NumberDecl loc probe_fixture.ads:6:6
   end Probe_Fixture
   ```
 
@@ -256,8 +333,9 @@ its expected dump.
 ## Verification beyond bbt
 
 - Unit tests: no separate unit-test framework; the dump grammar is
-  pinned by these scenarios and by the main-crate reader when backend
-  #1 lands.
+  pinned by these scenarios and by the main-crate reader
+  (`Hac_Bindgen.Dump_Reader`), which rejects any deviation from the
+  grammar.
 - SPARK / proof: not applicable; SPARK and proof are disabled.
 - Other: `alr build` in `tools/libadalang_backend` (GNAT 15.2.x) is
   part of `make check`.

@@ -1,4 +1,4 @@
-# B001 — Non-bindable constructs: warnings
+# B001 — Non-bindable constructs: warnings <!-- omit from toc -->
 
 hac-bindgen traverses the supplied API and binds what it can; what it
 cannot bind triggers a warning, never a package rejection, and never a

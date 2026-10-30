@@ -1,4 +1,4 @@
-# C001 — Usage and input errors
+# C001 — Usage and input errors <!-- omit from toc -->
 
 Usage errors and tool failures: bad command lines, unreadable inputs,
 files that are not Ada specifications. These are distinct from the
@@ -23,10 +23,6 @@ here the tool cannot do its job at all ([S007], [S010]).
 A text file that the analyser cannot read as an Ada package
 specification is a tool error, reported with the file name and the
 analyser message — not a traversal warning.
-
-The message itself is not contractual yet: until the analyser lands
-(M3), the tool emits a stub message, and the scenario pins only the
-part that is already contractual: the exit status and the file name.
 
 - Given the file `not_ada.ads` containing:
   ```text

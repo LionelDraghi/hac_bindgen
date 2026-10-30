@@ -1,10 +1,35 @@
-# hac_bindgen specifications
+# hac_bindgen specifications <!-- omit from toc -->
 
 This document holds the non-functional specifications of hac-bindgen,
 the specification method that structures them, and the index of the
 feature pages. The spirit of the tool is stated in
 [`manifesto.md`](manifesto.md); the testable behavior lives in the
 feature pages.
+
+## Contents <!-- omit from toc -->
+
+- [1. Specification method](#1-specification-method)
+- [2. Non-functional specifications](#2-non-functional-specifications)
+  - [[S001] Determinism](#s001-determinism)
+  - [[S002] Generated-file identification](#s002-generated-file-identification)
+  - [[S003] No silent conversion](#s003-no-silent-conversion)
+  - [[S004] Generated code quality](#s004-generated-code-quality)
+  - [[S005] Input is plain legal Ada](#s005-input-is-plain-legal-ada)
+  - [[S006] Traversal contract](#s006-traversal-contract)
+  - [[S007] Failure classes](#s007-failure-classes)
+  - [[S008] Test philosophy](#s008-test-philosophy)
+  - [[S009] No handwritten glue](#s009-no-handwritten-glue)
+  - [[S010] Command-line interface](#s010-command-line-interface)
+  - [[S011] Restriction is a feature](#s011-restriction-is-a-feature)
+  - [[S012] GNAT remains the legality authority](#s012-gnat-remains-the-legality-authority)
+- [3. Feature index](#3-feature-index)
+- [4. Cross-reference table](#4-cross-reference-table)
+- [5. Terminology](#5-terminology)
+- [6. Scope and non-goals](#6-scope-and-non-goals)
+- [7. Acceptance criteria](#7-acceptance-criteria)
+- [8. Failure criteria](#8-failure-criteria)
+- [9. Design principles for future extensions](#9-design-principles-for-future-extensions)
+- [10. References](#10-references)
 
 ## 1. Specification method
 
@@ -173,7 +198,7 @@ Executable features (`features/`):
 |---|---|---|---|
 | A001 | Command-line interface | [A001_cli.md](features/A001_cli.md) | partially implemented |
 | A003 | Analysis backend interchange dump | [A003_interchange_dump.md](features/A003_interchange_dump.md) | implemented |
-| C001 | Usage and input errors | [C001_usage_errors.md](features/C001_usage_errors.md) | partially implemented |
+| C001 | Usage and input errors | [C001_usage_errors.md](features/C001_usage_errors.md) | implemented |
 
 Proposed features ([`proposed/`](proposed/), specified, not executable):
 

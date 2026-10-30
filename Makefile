@@ -18,14 +18,35 @@ SCENARII := ../docs/features/A001_cli.md \
 
 BACKEND_DIR := tools/libadalang_backend
 
-.PHONY: all help check build backend witness clean
+# One target per scenario page, by its ID prefix, case insensitive:
+#   make a003, make A003, make c001, ...
+SCENARIO_TARGETS := $(sort $(foreach f,$(SCENARII),\
+                       $(shell basename $(f) .md | cut -d_ -f1 | tr '[:upper:]' '[:lower:]') \
+                       $(shell basename $(f) .md | cut -d_ -f1)))
+
+define RUN_SCENARIOS
+@prefix=`echo $@ | tr '[:upper:]' '[:lower:]'`; \
+files=; \
+for f in $(SCENARII); do \
+  p=`basename $$f .md | cut -d_ -f1 | tr '[:upper:]' '[:lower:]'`; \
+  if [ "$$p" = "$$prefix" ]; then files="$$files $$f"; fi; \
+done; \
+if [ -z "$$files" ]; then \
+  echo "no scenario matches prefix '$$prefix'" >&2; exit 1; \
+fi; \
+mkdir -p $(BBT_ARTIFACTS); \
+cd tests && $(BBT) -nt --yes --cleanup=full $$files
+endef
+
+.PHONY: all help check build backend witness clean $(SCENARIO_TARGETS)
 
 all: check
 
 help:
 	@echo "hac_bindgen targets:"
-	@echo "  make      = make all = check (build + tests)"
+	@echo "  make        = make all = check (build + tests)"
 	@echo "  make check  build (tool + backend), then run the bbt executable documentation"
+	@echo "  make <scenario prefix, case insensitive>  run one scenario page, e.g. make a003"
 	@echo "  make build  build the tool only (validation mode)"
 	@echo "  make backend  build the Libadalang analysis backend crate"
 	@echo "  make clean  remove build and test artifacts"
@@ -36,6 +57,9 @@ check: build backend
 	mkdir -p $(BBT_ARTIFACTS)
 	cd tests && $(BBT) -nt --yes --cleanup=full $(SCENARII)
 	@echo === build and tests OK
+
+$(SCENARIO_TARGETS): build backend
+	$(RUN_SCENARIOS)
 
 build:
 	@echo === building hac_bindgen

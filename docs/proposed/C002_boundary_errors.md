@@ -1,4 +1,4 @@
-# C002 — Runtime boundary errors
+# C002 — Runtime boundary errors <!-- omit from toc -->
 
 The API shape is legal and bound, but the HAC program supplies an
 invalid runtime value, or the native application raises. These are the

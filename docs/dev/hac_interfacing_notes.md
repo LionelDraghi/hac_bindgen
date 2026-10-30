@@ -1,4 +1,4 @@
-# HAC interfacing notes — M2 evidence
+# HAC interfacing notes — M2 evidence <!-- omit from toc -->
 
 The interface findings below are verified against HAC 0.45.0, from the
 in-tree Alire dependency and its `demo/data_exchange/` sources. The

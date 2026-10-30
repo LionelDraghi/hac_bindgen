@@ -1,4 +1,4 @@
-# A002 — Facade generation: the scalar profile
+# A002 — Facade generation: the scalar profile <!-- omit from toc -->
 
 The core feature: hac-bindgen generates the scripting façade from the
 supplied API ([S006], [S009]). This page covers the first profile:

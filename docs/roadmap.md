@@ -1,4 +1,4 @@
-# Roadmap
+# Roadmap <!-- omit from toc -->
 
 Prioritised development plan. The manifest separates the essential from
 the gadgets; this plan commits the order. Details remain in the linked
@@ -10,8 +10,8 @@ Project skeleton, CLI, executable-documentation harness.
 
 - [x] Repository created from [ada-project-template](https://github.com/LionelDraghi/ada-project-template)
 - [x] Specification structure: `specifications.md` + numbered `features/`
-- [ ] CLI skeleton: `--version`, `--help`, `check` stub, usage errors → [A001], [C001]
-- [ ] First green bbt run (`make check`)
+- [x] CLI skeleton: `--version`, `--help`, `check` stub, usage errors → [A001], [C001]
+- [x] First green bbt run (`make check`)
 
 ## M2 — HAC interfacing evidence (essential)
 
@@ -39,7 +39,7 @@ templates.
 - [x] Analysis backend #1 selected and isolated: Libadalang in a
       dedicated GNAT 15.x crate emitting the format-1 interchange dump
       ([A003]; decision in `docs/dev/design_discussions.md`)
-- [ ] Analysis backend #1: parse an Ada package specification into the
+- [x] Analysis backend #1: parse an Ada package specification into the
       model with Libadalang (selected 2026-10-29, see
       `docs/dev/design_discussions.md`); the comparison with a second
       backend is a gadget

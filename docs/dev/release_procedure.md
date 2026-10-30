@@ -1,4 +1,4 @@
-# Release parameters
+# Release parameters <!-- omit from toc -->
 
 The common release procedure lives in the reference repository,
 [release_procedure.md](https://github.com/LionelDraghi/ada-project-template/blob/main/release_procedure.md),

@@ -1,7 +1,22 @@
-# <Change title>
+# <Change title> <!-- omit from toc -->
 
 Status: Proposed
 Source: <issue, discussion, concern, or request>
+
+## Contents <!-- omit from toc -->
+
+- [Need](#need)
+- [Intended outcome](#intended-outcome)
+- [Scope](#scope)
+- [Non-goals](#non-goals)
+- [Acceptance criteria](#acceptance-criteria)
+- [Specification](#specification)
+- [Executable scenarios](#executable-scenarios)
+  - [Scenario: <observable behavior>](#scenario-observable-behavior)
+- [Verification beyond bbt](#verification-beyond-bbt)
+- [Design implications](#design-implications)
+- [Open questions](#open-questions)
+- [Finalization target](#finalization-target)
 
 ## Need
 

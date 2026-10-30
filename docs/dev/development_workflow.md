@@ -1,4 +1,4 @@
-# Development workflow
+# Development workflow <!-- omit from toc -->
 
 This project follows the shared lifecycle — Explore, Propose,
 Implement, Refactor, Finalize, Release — defined in the reference
@@ -8,9 +8,9 @@ this project.
 
 ## Project conventions
 
-- Quick validation: `<command>`
-- Full validation: `<command>`
-- Domain rules the agent must know: `<file or none yet>`
+- Quick validation: `make build`
+- Full validation: `make check`
+- Domain rules the agent must know: none yet
 
 ## Conditional readings
 

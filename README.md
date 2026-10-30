@@ -1,4 +1,4 @@
-# hac_bindgen
+# hac_bindgen <!-- omit from toc -->
 
 **An Ada-to-HAC binding generator: expose a native Ada API to embedded
 HAC scripts without writing the interfacing glue by hand.**
@@ -28,6 +28,7 @@ structure and the index of features.
 ```sh
 make build   # Alire build
 make check   # build + bbt executable documentation
+make a003    # shortcut to run A003_interchange_dump.md scenario
 ```
 
 ## Licence

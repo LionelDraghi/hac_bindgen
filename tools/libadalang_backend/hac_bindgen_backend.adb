@@ -1,7 +1,7 @@
 --  hac_bindgen_backend -- Libadalang analysis backend for hac_bindgen.
 --
 --  Parses one Ada package specification and writes the format-1
---  interchange dump specified in docs/proposed/A003_interchange_dump.md.
+--  interchange dump specified in docs/features/A003_interchange_dump.md.
 --  The main hac_bindgen crate (GNAT 16) never links Libadalang; this
 --  dump is the only coupling between the two crates.
 --
@@ -133,6 +133,37 @@ procedure Hac_Bindgen_Backend is
       end case;
    end Mode_Image;
 
+   --  Source text with runs of whitespace collapsed to single spaces,
+   --  so that one declaration stays on one dump line.
+   function Flatten (S : String) return String is
+      Result         : String (S'Range);
+      Last           : Natural := Result'First - 1;
+      Last_Was_Space : Boolean := False;
+   begin
+      for C of S loop
+         if C = ' '
+           or else C = ASCII.HT
+           or else C = ASCII.CR
+           or else C = ASCII.LF
+         then
+            if not Last_Was_Space and then Last >= Result'First then
+               Last := Last + 1;
+               Result (Last) := ' ';
+            end if;
+            Last_Was_Space := True;
+         else
+            Last := Last + 1;
+            Result (Last) := C;
+            Last_Was_Space := False;
+         end if;
+      end loop;
+
+      if Last >= Result'First and then Result (Last) = ' ' then
+         Last := Last - 1;
+      end if;
+      return Result (Result'First .. Last);
+   end Flatten;
+
    --  Resolution identity of a type expression: the type mark's name
    --  when the expression is a subtype indication, "unresolved"
    --  otherwise.
@@ -146,12 +177,21 @@ procedure Hac_Bindgen_Backend is
    end Type_Identity;
 
    procedure Put_Decl (Decl : LAL.Basic_Decl'Class) is
-      Name : constant String := Txt (Decl.P_Defining_Name);
+      Name : constant String :=
+        (if Decl.Is_Null then "" else Txt (Decl.P_Defining_Name));
       Loc  : constant String :=
-        (if Decl.P_Defining_Name.Is_Null
+        (if Decl.Is_Null
+         then ""
+         elsif Decl.P_Defining_Name.Is_Null
          then Loc_Of (Decl)
          else Loc_Of (Decl.P_Defining_Name));
    begin
+      if Decl.Is_Null then
+         --  Not a basic declaration (pragma, use clause, ...): not part
+         --  of the API model, skipped without a dump line.
+         return;
+      end if;
+
       if Decl.Kind in LCL.Ada_Subp_Decl | LCL.Ada_Null_Subp_Decl then
          declare
             Spec : constant LAL.Subp_Spec :=
@@ -166,7 +206,7 @@ procedure Hac_Bindgen_Backend is
             for Param of LAL.F_Params (LAL.F_Subp_Params (Spec)) loop
                for DN of LAL.F_Ids (Param) loop
                   Put_Line
-                    ("    param " & Txt (DN)
+                    ("    param " & Txt (DN) & " loc " & Loc_Of (DN)
                      & " mode " & Mode_Image (LAL.F_Mode (Param))
                      & " type " & Txt (LAL.F_Type_Expr (Param))
                      & " resolved "
@@ -230,7 +270,7 @@ procedure Hac_Bindgen_Backend is
             else
                Put_Line
                  ("  type " & Name & " loc " & Loc
-                  & " definition " & Txt (Def));
+                  & " definition " & Flatten (Txt (Def)));
             end if;
          end;
 
@@ -240,12 +280,16 @@ procedure Hac_Bindgen_Backend is
               LAL.As_Object_Decl (Decl);
             Kind : constant String :=
               (if LAL.F_Has_Constant (Obj) then "constant" else "variable");
-            TE : constant LAL.Type_Expr := LAL.F_Type_Expr (Obj);
+            TE   : constant LAL.Type_Expr := LAL.F_Type_Expr (Obj);
+            Type_Text : constant String :=
+              (if TE.Is_Null then "<anonymous>" else Txt (TE));
+            Resolved_Text : constant String :=
+              (if TE.Is_Null then "unresolved" else Type_Identity (TE));
          begin
             Put_Line
               ("  " & Kind & " " & Name & " loc " & Loc
-               & " type " & Txt (TE)
-               & " resolved " & Type_Identity (TE)
+               & " type " & Type_Text
+               & " resolved " & Resolved_Text
                & (if not LAL.F_Default_Expr (Obj).Is_Null
                   then " value "
                        & Static_Int (LAL.F_Default_Expr (Obj))
@@ -301,17 +345,23 @@ begin
    Put_Line
      ("hac-bindgen-backend " & Hac_Bindgen_Backend_Config.Crate_Version
       & " format " & Format_Version);
-   Put_Line ("package " & Txt (Package_Decl.F_Package_Name));
+   Put_Line
+     ("package " & Txt (Package_Decl.F_Package_Name)
+      & " loc " & Loc_Of (Package_Decl.F_Package_Name));
 
    Put_Line ("public");
    for Decl of LAL.F_Decls (LAL.F_Public_Part (Package_Decl)) loop
-      Put_Decl (Decl.As_Basic_Decl);
+      if Decl.Kind in LCL.Ada_Basic_Decl then
+         Put_Decl (Decl.As_Basic_Decl);
+      end if;
    end loop;
 
    if not LAL.F_Private_Part (Package_Decl).Is_Null then
       Put_Line ("private");
       for Decl of LAL.F_Decls (LAL.F_Private_Part (Package_Decl)) loop
-         Put_Decl (Decl.As_Basic_Decl);
+         if Decl.Kind in LCL.Ada_Basic_Decl then
+            Put_Decl (Decl.As_Basic_Decl);
+         end if;
       end loop;
    end if;
 

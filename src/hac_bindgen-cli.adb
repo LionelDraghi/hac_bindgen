@@ -7,7 +7,9 @@
 
 with Ada.Command_Line;
 with Ada.Directories;
+with Ada.Exceptions;
 with Ada.Text_IO;
+with Hac_Bindgen.Analysis;
 
 package body Hac_Bindgen.CLI is
 
@@ -19,7 +21,7 @@ package body Hac_Bindgen.CLI is
 
    Run_Error : exception;
 
-   procedure Fail (Message : String);
+   procedure Fail (Message : String; With_Usage : Boolean := True);
 
    procedure Put_Usage (Stream : TIO.File_Type);
 
@@ -27,10 +29,12 @@ package body Hac_Bindgen.CLI is
 
    ---------------------------------------------------------------------
 
-   procedure Fail (Message : String) is
+   procedure Fail (Message : String; With_Usage : Boolean := True) is
    begin
       TIO.Put_Line (TIO.Standard_Error, "error: " & Message);
-      Put_Usage (TIO.Standard_Error);
+      if With_Usage then
+         Put_Usage (TIO.Standard_Error);
+      end if;
       CL.Set_Exit_Status (CL.Failure);
       raise Run_Error;
    end Fail;
@@ -86,31 +90,42 @@ package body Hac_Bindgen.CLI is
                Fail ("missing source file");
             end if;
 
-            declare
-               First_Source : Natural := 0;
-            begin
-               for I in 2 .. CL.Argument_Count loop
-                  declare
-                     Source : constant String := CL.Argument (I);
-                  begin
-                     exit when Source (Source'First) = '-';  --  next option
-                     if not File_Exists (Source) then
-                        Fail ("cannot read '" & Source & "'");
-                     end if;
-                     if First_Source = 0 then
-                        First_Source := I;
-                     end if;
-                  end;
-               end loop;
+            for I in 2 .. CL.Argument_Count loop
+               declare
+                  Source : constant String := CL.Argument (I);
+               begin
+                  exit when Source (Source'First) = '-';  --  next option
+                  if not File_Exists (Source) then
+                     Fail ("cannot read '" & Source & "'");
+                  end if;
 
-               --  M3/M4: analysis, traversal and generation.
+                  if Command = "check" then
+                     --  M3: the analysis front-end builds and validates
+                     --  the model; the traversal classification itself
+                     --  is the next step ([S006], B001).
+                     begin
+                        Analysis.Check (Source);
+                     exception
+                        when Error : Analysis.Analysis_Error =>
+                           Fail (Ada.Exceptions.Exception_Message (Error),
+                                 With_Usage => False);
+                     end;
+                  end if;
+               end;
+            end loop;
+
+            if Command = "check" then
+               --  Every source analyzed and validated; the traversal
+               --  and the generation are M3/M4 work.
+               CL.Set_Exit_Status (CL.Success);
+            else
+               --  M4: generation.
                TIO.Put_Line
                  (TIO.Standard_Error,
-                  Hac_Bindgen.Tool_Name & ": " & Command & " "
-                  & CL.Argument (First_Source)
-                  & " is not implemented yet (see docs/roadmap.md, M3 and M4)");
+                  Hac_Bindgen.Tool_Name & ": generate is not implemented yet"
+                  & " (see docs/roadmap.md, M4)");
                CL.Set_Exit_Status (CL.Failure);
-            end;
+            end if;
 
          else
             Fail ("invalid command '" & Command & "'");

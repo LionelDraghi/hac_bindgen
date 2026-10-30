@@ -1,4 +1,4 @@
-# tests
+# tests <!-- omit from toc -->
 
 The bbt run directory: scenarios execute here, so their relative
 paths (`../bin/hac-bindgen`, `../docs/features/...`) resolve inside

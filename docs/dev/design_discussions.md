@@ -1,4 +1,4 @@
-# Design discussions
+# Design discussions <!-- omit from toc -->
 
 This document records structural choices, alternatives, rationale, and
 status. It does not duplicate behavioral specifications. An open
@@ -16,11 +16,27 @@ material risk.
 
 Statuses: Discussing | Accepted | Rejected | Superseded.
 
+## Contents <!-- omit from toc -->
+
+- [Parser-independent binding model contract](#parser-independent-binding-model-contract)
+  - [Classification embedded in each declaration](#classification-embedded-in-each-declaration)
+  - [Separate analysis result linked by declaration identity](#separate-analysis-result-linked-by-declaration-identity)
+- [Analysis backend evaluation](#analysis-backend-evaluation)
+  - [Libadalang](#libadalang)
+  - [Dmitry Kazakov's Ada Syntax Analyzer](#dmitry-kazakovs-ada-syntax-analyzer)
+- [Interchange format between backend and main crate](#interchange-format-between-backend-and-main-crate)
+  - [JSON](#json)
+  - [TOML](#toml)
+  - [House line-oriented text](#house-line-oriented-text)
+- [Template for a new discussion](#template-for-a-new-discussion)
+
 ### Parser-independent binding model contract
 
 Status: Accepted
 Date: 2026-10-29
-Related: [M3 binding model proposal](../proposed/binding_model.md)
+Related: implemented in `Hac_Bindgen.Model` and
+`Hac_Bindgen.Dump_Reader`; see also the
+[interchange format discussion](#interchange-format-between-backend-and-main-crate)
 
 ## Context
 
@@ -76,8 +92,7 @@ supported type.
 
 Status: Accepted (Libadalang)
 Date: 2026-10-29
-Related: M3; [binding model proposal](../proposed/binding_model.md);
-[backend licensing concern](concerns.md)
+Related: M3; [backend licensing concern](concerns.md)
 
 ## Context
 
@@ -308,10 +323,20 @@ discussion, not to this internal contract.
 ## Consequences
 
 - The backend executable and the main crate reader implement the same
-  grammar; until the grammar proposal is accepted and the reader
-  exists, the probe-style dump stays provisional.
-- Changing the grammar after backend #1 consumes it requires a version
-  header in the dump.
+  grammar; format 1 is frozen since the reader
+  (`Hac_Bindgen.Dump_Reader`) landed (2026-10-30), and any change now
+  requires a format bump.
+- The main crate runs the backend executable through
+  `GNAT.Expect.Get_Command_Output`. The objections that led bbt to
+  reject `GNAT.Expect` (sliding buffer, TTY pollution, exit status of
+  an already terminated child — see the bbt design discussion D1) were
+  re-checked against this narrower use and do not apply: the capture
+  drains to end of stream with an unbounded buffer, no TTY is
+  involved, and the exit status of a child that terminated normally is
+  reported correctly (re-verified on GNAT 16.1, 2026-10-30).
+- Format-1 facts that the model does not carry yet (enum literals,
+  static constraints and values, unhandled kind names) are checked for
+  conformance by the reader and dropped; tracked as a concern.
 
 ## Template for a new discussion
 

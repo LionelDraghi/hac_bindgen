@@ -1,4 +1,4 @@
-# A001 — Command-line interface
+# A001 — Command-line interface <!-- omit from toc -->
 
 `hac-bindgen` is a command-line tool; the CLI is its sole entry point
 ([S010]). This page owns the command surface: subcommands, options, exit
@@ -31,6 +31,15 @@ traversal and reports the bindable / non-bindable classification
 without writing any generated file. Both report the traversal summary:
 what was bound, what was warned, and why — with the counts and, for the
 not-bound part, the warnings of [B001].
+
+## Contents <!-- omit from toc -->
+
+- [Scenario: version reporting](#scenario-version-reporting)
+- [Scenario: help](#scenario-help)
+- [Scenario: no argument means help](#scenario-no-argument-means-help)
+- [Scenario: an unknown option is rejected](#scenario-an-unknown-option-is-rejected)
+- [Analysis backend](#analysis-backend)
+  - [Scenario: check analyses a valid specification](#scenario-check-analyses-a-valid-specification)
 
 ## Scenario: version reporting
 
@@ -77,3 +86,29 @@ Invoking `hac-bindgen` without any argument is equivalent to
          hac-bindgen --help
   ```
 - And the exit code is `1`
+
+## Analysis backend
+
+`check` and `generate` run the analysis backend executable on each
+source and build the binding model from its dump — the main tool never
+links the analysis library (backend isolation decision in
+[design discussions](../dev/design_discussions.md)). The backend is
+located through the `HAC_BINDGEN_BACKEND` environment variable when it
+is set, then relative to the current directory
+(`tools/libadalang_backend/bin/hac_bindgen_backend` from the repository
+root, `../tools/...` from `tests/`).
+
+### Scenario: check analyses a valid specification
+
+The source is analyzed through the backend, and the model is built and
+validated; nothing is printed on success (the traversal summary is
+[B001] work).
+
+- Given the new file `probe_fixture.ads` containing
+  ```ada
+  package Probe_Fixture is
+     procedure Ping (X : in Integer);
+  end Probe_Fixture;
+  ```
+- When I successfully run `../bin/hac-bindgen check probe_fixture.ads`
+- Then the exit code is `0`

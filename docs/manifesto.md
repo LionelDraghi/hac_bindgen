@@ -1,8 +1,18 @@
-# hac_bindgen manifesto
+# hac_bindgen manifesto <!-- omit from toc -->
 
 The manifesto describe the project motivations. 
 The detailed, testable content lives in [`specifications.md`](specifications.md)
 and in the [`features/`](features/) pages.
+
+## Contents <!-- omit from toc -->
+
+- [1. Motivation](#1-motivation)
+- [2. The primary objective](#2-the-primary-objective)
+- [3. Principles](#3-principles)
+- [4. Test philosophy](#4-test-philosophy)
+- [5. Architecture in one picture](#5-architecture-in-one-picture)
+- [6. Priorities](#6-priorities)
+- [7. Final statement](#7-final-statement)
 
 ## 1. Motivation
 

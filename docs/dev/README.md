@@ -1,4 +1,4 @@
-# docs/dev — maintainer-facing documentation
+# docs/dev — maintainer-facing documentation <!-- omit from toc -->
 
 This directory holds what the maintainers need to work on the project:
 the workflow, the release parameters, the indexes of open work, and the

@@ -11,4 +11,5 @@ licenses = "Apache-2.0"
 # against. Coupling with the main crate is only the textual model dump.
 [[depends-on]]
 libadalang = "=26.0.0"
+libadalang_tools = "^26.0.0"
 gnat = ">=15.2.1 & <16.0.0"

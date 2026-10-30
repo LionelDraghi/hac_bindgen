@@ -9,27 +9,33 @@ BBT      ?= bbt
 ARTIFACTS_DIR ?= artifacts
 BBT_ARTIFACTS := $(ARTIFACTS_DIR)/bbt
 
-# Executable documentation: the pages in docs/features, with runnable
-# scenarios. Pages in docs/proposed are specified but not executable
-# yet; they join this list when their scenarios run green.
-SCENARII := ../docs/features/A001_cli.md \
-            ../docs/features/A003_interchange_dump.md \
-            ../docs/features/C001_usage_errors.md
+# Executable documentation: bbt runs the scenario pages of a
+# directory. `make check` runs the features pages, so a page joins the
+# full validation when it lands in docs/features. The per-prefix
+# targets also cover the proposed pages, so a scenario under
+# specification can be run by hand. Paths are repository-root
+# relative; bbt runs from tests/, hence the ../ added at invocation.
+FEATURES_DIR  := docs/features
+PROPOSED_DIR  := docs/proposed
+
+ALL_SCENARII := $(filter-out $(PROPOSED_DIR)/proposal_template.md,\
+                 $(wildcard $(FEATURES_DIR)/*.md) \
+                 $(wildcard $(PROPOSED_DIR)/*.md))
 
 BACKEND_DIR := tools/libadalang_backend
 
 # One target per scenario page, by its ID prefix, case insensitive:
-#   make a003, make A003, make c001, ...
-SCENARIO_TARGETS := $(sort $(foreach f,$(SCENARII),\
+#   make a003, make A003, make c001, make b001, ...
+SCENARIO_TARGETS := $(sort $(foreach f,$(ALL_SCENARII),\
                        $(shell basename $(f) .md | cut -d_ -f1 | tr '[:upper:]' '[:lower:]') \
                        $(shell basename $(f) .md | cut -d_ -f1)))
 
 define RUN_SCENARIOS
 @prefix=`echo $@ | tr '[:upper:]' '[:lower:]'`; \
 files=; \
-for f in $(SCENARII); do \
+for f in $(ALL_SCENARII); do \
   p=`basename $$f .md | cut -d_ -f1 | tr '[:upper:]' '[:lower:]'`; \
-  if [ "$$p" = "$$prefix" ]; then files="$$files $$f"; fi; \
+  if [ "$$p" = "$$prefix" ]; then files="$$files ../$$f"; fi; \
 done; \
 if [ -z "$$files" ]; then \
   echo "no scenario matches prefix '$$prefix'" >&2; exit 1; \
@@ -38,7 +44,7 @@ mkdir -p $(BBT_ARTIFACTS); \
 cd tests && $(BBT) -nt --yes --cleanup=full $$files
 endef
 
-.PHONY: all help check build backend witness clean $(SCENARIO_TARGETS)
+.PHONY: all help check build backend witness metrics clean $(SCENARIO_TARGETS)
 
 all: check
 
@@ -46,16 +52,17 @@ help:
 	@echo "hac_bindgen targets:"
 	@echo "  make        = make all = check (build + tests)"
 	@echo "  make check  build (tool + backend), then run the bbt executable documentation"
-	@echo "  make <scenario prefix, case insensitive>  run one scenario page, e.g. make a003"
+	@echo "  make <scenario prefix, case insensitive>  run one scenario page, e.g. make a003, make b001"
 	@echo "  make build  build the tool only (validation mode)"
 	@echo "  make backend  build the Libadalang analysis backend crate"
+	@echo "  make metrics  run gnatmetric over src/, report in artifacts/metrics"
 	@echo "  make clean  remove build and test artifacts"
 	@echo "  make help   this list"
 
 check: build backend
 	@echo === running the bbt executable documentation
 	mkdir -p $(BBT_ARTIFACTS)
-	cd tests && $(BBT) -nt --yes --cleanup=full $(SCENARII)
+	cd tests && $(BBT) -nt --yes --cleanup=full ../$(FEATURES_DIR)
 	@echo === build and tests OK
 
 $(SCENARIO_TARGETS): build backend
@@ -74,9 +81,22 @@ backend:
 	cd $(BACKEND_DIR) && $(ALR) build
 	@echo OK
 
+# Source metrics: gnatmetric comes from libadalang_tools, built with
+# the backend crate (GNAT 15); the per-source .metrix files and the
+# text report land under artifacts/, not in the sources.
+GNATMETRIC := $(shell ls $$HOME/.local/share/alire/builds/libadalang_tools_*/*/bin/gnatmetric 2>/dev/null | head -1)
+
 witness:
 	$(ALR) exec -- gprbuild -P tests/witness/witness.gpr
 	cd tests/witness && ../../bin/witness_main.exe
+
+metrics:
+	@echo === source metrics with gnatmetric
+	if [ -z "$(GNATMETRIC)" ]; then \
+	  echo "gnatmetric not found; build tools/libadalang_backend (it provides libadalang_tools)" >&2; exit 1; fi
+	mkdir -p $(ARTIFACTS_DIR)/metrics
+	$(GNATMETRIC) --complexity-all src/*.ads src/*.adb --output-dir $(ARTIFACTS_DIR)/metrics
+	@echo OK
 
 clean:
 	@echo === cleaning

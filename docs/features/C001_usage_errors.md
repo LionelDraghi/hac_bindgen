@@ -2,7 +2,7 @@
 
 Usage errors and tool failures: bad command lines, unreadable inputs,
 files that are not Ada specifications. These are distinct from the
-non-bindable-construct warnings of [B001](../proposed/B001_non_bindable_constructs.md):
+non-bindable-construct warnings of [B001](B001_non_bindable_constructs.md):
 here the tool cannot do its job at all ([S007], [S010]).
 
 ## Scenario: a missing input file is an error

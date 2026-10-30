@@ -198,6 +198,7 @@ Executable features (`features/`):
 |---|---|---|---|
 | A001 | Command-line interface | [A001_cli.md](features/A001_cli.md) | partially implemented |
 | A003 | Analysis backend interchange dump | [A003_interchange_dump.md](features/A003_interchange_dump.md) | implemented |
+| B001 | Non-bindable constructs: warnings | [B001_non_bindable_constructs.md](features/B001_non_bindable_constructs.md) | partially implemented |
 | C001 | Usage and input errors | [C001_usage_errors.md](features/C001_usage_errors.md) | implemented |
 
 Proposed features ([`proposed/`](proposed/), specified, not executable):
@@ -205,7 +206,6 @@ Proposed features ([`proposed/`](proposed/), specified, not executable):
 | ID | Feature | Page |
 |---|---|---|
 | A002 | Facade generation: scalar profile | [A002_facade_generation.md](proposed/A002_facade_generation.md) |
-| B001 | Non-bindable constructs: warnings | [B001_non_bindable_constructs.md](proposed/B001_non_bindable_constructs.md) |
 | C002 | Runtime boundary errors | [C002_boundary_errors.md](proposed/C002_boundary_errors.md) |
 
 Next free identifiers: `A004`, `B002`, `C003`.
@@ -223,7 +223,7 @@ later by `make doc` if it earns its cost.
 | [S003] no silent conversion | A002, C002 | src/hac_bindgen-generation\*, generated adapter |
 | [S004] generated code quality | A002 | src/hac_bindgen-generation\* |
 | [S005] input is plain legal Ada | A002, B001 | (input contract) |
-| [S006] traversal contract | A002, B001 | src/hac_bindgen-analysis\*, src/hac_bindgen-validation\* |
+| [S006] traversal contract | A002, B001 | src/hac_bindgen-analysis\*, src/hac_bindgen-traversal\* |
 | [S007] failure classes | B001, C001, C002 | src/hac_bindgen-cli\*, generated adapter |
 | [S008] test philosophy | all pages | tests/ |
 | [S009] no handwritten glue | A002 | generated adapter |

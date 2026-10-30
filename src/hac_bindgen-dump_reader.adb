@@ -424,9 +424,10 @@ package body Hac_Bindgen.Dump_Reader is
 
       ---------------------------------------------------------------------
       procedure Start_Declaration
-        (Name     : String;
-         Location : M.Source_Location;
-         New_Kind : M.Declaration_Kind)
+        (Name      : String;
+         Location  : M.Source_Location;
+         New_Kind  : M.Declaration_Kind;
+         Kind_Name : String := "")
       is
          Id       : constant M.Declaration_Id := Next_Id;
          New_Name : constant Unbounded_String := To_Unbounded_String (Name);
@@ -483,12 +484,76 @@ package body Hac_Bindgen.Dump_Reader is
                Pending := (Kind => M.Other_Declaration, Id => Id,
                            Source_Name => New_Name,
                            Canonical_Name => New_Name,
-                           Location => Location, Parameters => <>);
+                           Location => Location, Parameters => <>,
+                           Kind_Name => SU.To_Unbounded_String (Kind_Name));
          end case;
          Have_Pending   := True;
          Pending_Public := Section = Public_Section;
          Next_Id := M.Declaration_Id'Succ (Next_Id);
       end Start_Declaration;
+
+      ---------------------------------------------------------------------------
+      --  Type category of a type definition, from the flattened
+      --  definition text of the dump line (the words after
+      --  "definition"). Derived types are classified through their
+      --  parent when it is a predefined scalar.
+      function Kind_Of_Definition (Definition : String) return M.Type_Kind is
+         Rest : String := Definition;
+      begin
+         if Starts_With (Rest, "abstract ") then
+            Rest := Rest (Rest'First + 9 .. Rest'Last);
+         end if;
+
+         if Rest = "" then
+            return M.Other_Type;
+         elsif Starts_With (Rest, "tagged") then
+            return M.Tagged_Type;
+         elsif Starts_With (Rest, "record") then
+            return M.Record_Type;
+         elsif Starts_With (Rest, "access") then
+            return M.Access_Type;
+         elsif Starts_With (Rest, "array") then
+            return M.Array_Type;
+         elsif Starts_With (Rest, "private") then
+            return M.Private_Type;
+         elsif Starts_With (Rest, "mod ") then
+            return M.Modular_Type;
+         elsif Starts_With (Rest, "range")
+           or else Starts_With (Rest, "new Integer")
+           or else Starts_With (Rest, "new Boolean")
+         then
+            return M.Integer_Type;
+         elsif Starts_With (Rest, "new Float")
+           or else Starts_With (Rest, "new Long_Float")
+           or else Starts_With (Rest, "new Long_Long_Float")
+         then
+            return M.Floating_Point_Type;
+         elsif Starts_With (Rest, "new String") then
+            return M.String_Type;
+         elsif Starts_With (Rest, "delta")
+           or else Starts_With (Rest, "digits")
+         then
+            return M.Fixed_Point_Type;
+         else
+            return M.Other_Type;
+         end if;
+      end Kind_Of_Definition;
+
+      --  The definition text of a type line: the tokens after
+      --  "definition", joined by single spaces.
+      function Definition_Of
+        (Tokens : Token_Array; From : Positive) return String
+      is
+         Buffer : SU.Unbounded_String;
+      begin
+         for I in From .. Tokens'Last loop
+            if I > From then
+               Buffer := Buffer & " ";
+            end if;
+            Buffer := Buffer & Tok (Tokens, I);
+         end loop;
+         return SU.To_String (Buffer);
+      end Definition_Of;
 
       ---------------------------------------------------------------------
       procedure Expect_Header (Line_No : Positive; Line : String) is
@@ -620,18 +685,24 @@ package body Hac_Bindgen.Dump_Reader is
             Expect (Tok (Tokens, 3) = "loc"
                       and then Tok (Tokens, 5) = "definition", Line_No,
                     "malformed type line");
-            Start_Declaration
-              (Name     => Tok (Tokens, 2),
-               Location => To_Location (Tok (Tokens, 4), Line_No),
-               New_Kind => M.Type_Declaration);
-            Entities.Append
-              (Entity_Info'
-                (Name      => SU.To_Unbounded_String (Tok (Tokens, 2)),
-                Loc_Image => SU.To_Unbounded_String (Tok (Tokens, 4)),
-                Kind      => Type_Entity,
-                Own_Kind  => M.Unknown_Type,
-                Base_Name => SU.Null_Unbounded_String,
-                Base_Ref  => SU.Null_Unbounded_String));
+            declare
+               Kind : constant M.Type_Kind :=
+                 Kind_Of_Definition (Definition_Of (Tokens, 6));
+            begin
+               Start_Declaration
+                 (Name     => Tok (Tokens, 2),
+                  Location => To_Location (Tok (Tokens, 4), Line_No),
+                  New_Kind => M.Type_Declaration);
+               Pending.Declared_Kind := Kind;
+               Entities.Append
+                 (Entity_Info'
+                   (Name      => SU.To_Unbounded_String (Tok (Tokens, 2)),
+                   Loc_Image => SU.To_Unbounded_String (Tok (Tokens, 4)),
+                   Kind      => Type_Entity,
+                   Own_Kind  => Kind,
+                   Base_Name => SU.Null_Unbounded_String,
+                   Base_Ref  => SU.Null_Unbounded_String));
+            end;
 
          elsif Kind = "constant" or else Kind = "variable" then
             Expect (Tokens'Length in 8 | 10, Line_No,
@@ -658,9 +729,10 @@ package body Hac_Bindgen.Dump_Reader is
             Expect (Tok (Tokens, 3) = "loc", Line_No,
                     "malformed unhandled line");
             Start_Declaration
-              (Name     => Tok (Tokens, 2),
-               Location => To_Location (Tok (Tokens, 4), Line_No),
-               New_Kind => M.Other_Declaration);
+              (Name      => Tok (Tokens, 2),
+               Location  => To_Location (Tok (Tokens, 4), Line_No),
+               New_Kind  => M.Other_Declaration,
+               Kind_Name => Tok (Tokens, 2));
 
          else
             Fail (Line_No, "unknown declaration kind """ & Kind & """");

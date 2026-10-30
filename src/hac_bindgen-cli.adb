@@ -100,9 +100,10 @@ package body Hac_Bindgen.CLI is
                   end if;
 
                   if Command = "check" then
-                     --  M3: the analysis front-end builds and validates
-                     --  the model; the traversal classification itself
-                     --  is the next step ([S006], B001).
+                     --  The analysis front-end builds the model, then
+                     --  the traversal classifies it and prints the
+                     --  warnings and the summary on standard output
+                     --  ([S006], B001).
                      begin
                         Analysis.Check (Source);
                      exception

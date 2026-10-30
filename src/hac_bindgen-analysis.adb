@@ -10,6 +10,7 @@ with Ada.Exceptions;
 with GNAT.Expect;
 with GNAT.OS_Lib;
 with Hac_Bindgen.Dump_Reader;
+with Hac_Bindgen.Traversal;
 
 package body Hac_Bindgen.Analysis is
 
@@ -100,10 +101,10 @@ package body Hac_Bindgen.Analysis is
    ---------------------------------------------------------------------
 
    procedure Check (Source_Path : String) is
-      Result : Model.Package_Model := Analyze (Source_Path);
-      pragma Unreferenced (Result);
+      Pkg    : constant Model.Package_Model   := Analyze (Source_Path);
+      Result : constant Model.Analysis_Result := Traversal.Classify (Pkg);
    begin
-      null;
+      Traversal.Report (Pkg, Result);
    end Check;
 
 end Hac_Bindgen.Analysis;

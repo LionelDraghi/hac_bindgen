@@ -45,10 +45,13 @@ templates.
       backend is a gadget
 - [ ] Licensing of the selected backend recorded before the decision
       (concern indexed in `docs/dev/concerns.md`)
-- [ ] Traversal contract: every public declaration classified bindable
-      or not ([S006])
+- [x] Traversal contract: every public declaration classified bindable
+      or not ([S006], [B001])
 
 ## M4 — Generation (essential, the product)
+
+Release trigger: version 0.1.0 ships when the first complete binding
+is generated end to end.
 
 - [ ] Native adapter generator: callbacks, conversions, registration
 - [ ] HAC declaration generator: `with Import => True` stubs
@@ -58,10 +61,12 @@ templates.
 
 ## M5 — Warnings catalogue (essential)
 
-- [ ] Warning format and stable identifiers ([B001])
+- [x] Warning format and stable identifiers ([B001])
 - [ ] First catalogue entries: overloads, access, private/tagged,
-      composites, `out`/`in out` ([B001-01] .. [B001-04])
-- [ ] Summary output: bound / not bound counts
+      composites, `out`/`in out` ([B001-01] .. [B001-04]; the
+      classification is in, the scenarios B001-02/B001-03 wait for
+      `generate`)
+- [x] Summary output: bound / not bound counts
 
 ## M6 — Wider profile (essential, incremental)
 

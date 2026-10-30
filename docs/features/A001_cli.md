@@ -101,8 +101,9 @@ root, `../tools/...` from `tests/`).
 ### Scenario: check analyses a valid specification
 
 The source is analyzed through the backend, and the model is built and
-validated; nothing is printed on success (the traversal summary is
-[B001] work).
+validated; on success the traversal warnings and summary are printed
+on the standard output (specified in
+[B001](B001_non_bindable_constructs.md)).
 
 - Given the new file `probe_fixture.ads` containing
   ```ada
@@ -110,5 +111,5 @@ validated; nothing is printed on success (the traversal summary is
      procedure Ping (X : in Integer);
   end Probe_Fixture;
   ```
-- When I successfully run `../bin/hac-bindgen check probe_fixture.ads`
-- Then the exit code is `0`
+- When I run `../bin/hac-bindgen check probe_fixture.ads`
+- Then there is no error

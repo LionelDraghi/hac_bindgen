@@ -34,6 +34,7 @@ package Hac_Bindgen.Model is
       Access_Type,
       Array_Type,
       Record_Type,
+      Tagged_Type,
       Private_Type,
       Task_Type,
       Protected_Type,
@@ -97,6 +98,12 @@ package Hac_Bindgen.Model is
             Object_Type : Type_Reference;
          when Type_Declaration =>
             Declared_Kind : Type_Kind := Unknown_Type;
+         when Other_Declaration =>
+            --  A declaration the analysis backend could not represent:
+            --  the dump carries the parser kind name, which drives the
+            --  classification of constructs like exceptions, generic
+            --  units, or tasks.
+            Kind_Name : Text;
          when others =>
             null;
       end case;
@@ -122,6 +129,10 @@ package Hac_Bindgen.Model is
          when Not_Bindable =>
             Warning_Id : Text;
             Reason     : Text;
+            --  The construct the warning is about, e.g. "procedure
+            --  Create" or "parameter P", as spelled in the warning
+            --  line between the identifier and "is not bound".
+            Construct  : Text;
             Location   : Source_Location;
       end case;
    end record;

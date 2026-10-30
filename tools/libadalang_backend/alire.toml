@@ -1,6 +1,6 @@
 name = "hac_bindgen_backend"
 description = "Libadalang analysis backend for hac_bindgen"
-version = "0.1.0"
+version = "0.1.0-dev"
 authors = ["hac_bindgen maintainers"]
 licenses = "Apache-2.0"
 

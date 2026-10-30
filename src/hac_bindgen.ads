@@ -12,6 +12,6 @@
 package Hac_Bindgen is
 
    Tool_Name : constant String := "hac-bindgen";
-   Version   : constant String := "0.1.0-dev";
+   Version   : constant String := "0.1.0";
 
 end Hac_Bindgen;

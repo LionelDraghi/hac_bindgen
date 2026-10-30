@@ -139,7 +139,7 @@ its expected dump.
 - When I successfully run `../tools/libadalang_backend/bin/hac_bindgen_backend probe_fixture.ads`
 - Then the output is
   ```text
-  hac-bindgen-backend 0.1.0-dev format 1
+  hac-bindgen-backend 0.1.0 format 1
   package Probe_Fixture loc probe_fixture.ads:1:11
   public
     procedure Mutate loc probe_fixture.ads:2:16
@@ -159,7 +159,7 @@ its expected dump.
 - When I successfully run `../tools/libadalang_backend/bin/hac_bindgen_backend probe_fixture.ads`
 - Then the output is
   ```text
-  hac-bindgen-backend 0.1.0-dev format 1
+  hac-bindgen-backend 0.1.0 format 1
   package Probe_Fixture loc probe_fixture.ads:1:11
   public
     procedure Mutate loc probe_fixture.ads:2:16
@@ -185,7 +185,7 @@ its expected dump.
 - When I successfully run `../tools/libadalang_backend/bin/hac_bindgen_backend probe_fixture.ads`
 - Then the output is
   ```text
-  hac-bindgen-backend 0.1.0-dev format 1
+  hac-bindgen-backend 0.1.0 format 1
   package Probe_Fixture loc probe_fixture.ads:1:11
   public
     subtype Small loc probe_fixture.ads:2:14 base Integer resolved standard.Integer
@@ -206,7 +206,7 @@ its expected dump.
 - When I successfully run `../tools/libadalang_backend/bin/hac_bindgen_backend probe_fixture.ads`
 - Then the output is
   ```text
-  hac-bindgen-backend 0.1.0-dev format 1
+  hac-bindgen-backend 0.1.0 format 1
   package Probe_Fixture loc probe_fixture.ads:1:11
   public
     enum Color loc probe_fixture.ads:2:11 literals Red Green Blue
@@ -225,7 +225,7 @@ its expected dump.
 - When I successfully run `../tools/libadalang_backend/bin/hac_bindgen_backend probe_fixture.ads`
 - Then the output is
   ```text
-  hac-bindgen-backend 0.1.0-dev format 1
+  hac-bindgen-backend 0.1.0 format 1
   package Probe_Fixture loc probe_fixture.ads:1:11
   public
     subtype Small loc probe_fixture.ads:2:14 base Integer resolved standard.Integer
@@ -247,7 +247,7 @@ its expected dump.
 - When I successfully run `../tools/libadalang_backend/bin/hac_bindgen_backend probe_fixture.ads`
 - Then the output is
   ```text
-  hac-bindgen-backend 0.1.0-dev format 1
+  hac-bindgen-backend 0.1.0 format 1
   package Probe_Fixture loc probe_fixture.ads:1:11
   public
     constant Value loc probe_fixture.ads:2:6 type Integer resolved standard.Integer value 2
@@ -272,7 +272,7 @@ the package API: they produce no dump line.
 - When I successfully run `../tools/libadalang_backend/bin/hac_bindgen_backend probe_fixture.ads`
 - Then the output is
   ```text
-  hac-bindgen-backend 0.1.0-dev format 1
+  hac-bindgen-backend 0.1.0 format 1
   package Probe_Fixture loc probe_fixture.ads:3:11
   public
   end Probe_Fixture
@@ -297,7 +297,7 @@ anonymous number declaration — is reported as `unhandled` ([S006]).
 - When I successfully run `../tools/libadalang_backend/bin/hac_bindgen_backend probe_fixture.ads`
 - Then the output is
   ```text
-  hac-bindgen-backend 0.1.0-dev format 1
+  hac-bindgen-backend 0.1.0 format 1
   package Probe_Fixture loc probe_fixture.ads:1:11
   public
     type Rec loc probe_fixture.ads:2:11 definition record Field : Integer; end record

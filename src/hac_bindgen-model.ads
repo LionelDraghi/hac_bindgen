@@ -46,6 +46,10 @@ package Hac_Bindgen.Model is
       Source_Name    : Text;
       Canonical_Name : Text;
       Kind           : Type_Kind := Unknown_Type;
+      Has_Character_Literals : Boolean := False;
+      --  An enumeration whose literals include character literals
+      --  ('0', 'A', ...): HAC cannot parse such a declaration, so it
+      --  is not mirrorable ([A005], HACB0017).
    end record;
 
    package Type_Identity_Vectors is new Ada.Containers.Vectors

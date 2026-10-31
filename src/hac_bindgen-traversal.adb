@@ -44,6 +44,7 @@ package body Hac_Bindgen.Traversal is
    Unresolved_Id     : constant String := "HACB0013";
    Address_Id        : constant String := "HACB0014";
    Not_Covered_Id    : constant String := "HACB0016";
+   Char_Literal_Id   : constant String := "HACB0017";
 
    --  Why a construct cannot be bound, without its location: several
    --  checks share the same wording.
@@ -134,10 +135,19 @@ package body Hac_Bindgen.Traversal is
       end if;
 
       case Ref.Subtype_Chain.Last_Element.Kind is
+         when M.Enumeration_Type =>
+            --  A character-literal enumeration cannot be mirrored:
+            --  HAC rejects the declaration ([A005], HACB0017).
+            if Ref.Subtype_Chain.Last_Element.Has_Character_Literals then
+               return Diagnose
+                 (Char_Literal_Id,
+                  "HAC only accepts identifier literals");
+            end if;
+            return No_Diagnosis;
+
          when M.Integer_Type
             | M.Floating_Point_Type
             | M.Boolean_Type
-            | M.Enumeration_Type
          =>
             return No_Diagnosis;
 
@@ -402,6 +412,21 @@ package body Hac_Bindgen.Traversal is
                               & " boundary"),
                            "type " & SU.To_String (Declaration.Source_Name),
                            Declaration.Location);
+                     when M.Enumeration_Type =>
+                        --  A character literal is the only literal shape
+                        --  carrying a quote character in the mirror text
+                        --  ("is ('0', '1', ...)").
+                        if Contains
+                             (SU.To_String (Declaration.Mirror_Text), "'")
+                        then
+                           W := Warn
+                             (Diagnose
+                                (Char_Literal_Id,
+                                 "HAC only accepts identifier literals"),
+                              "type "
+                              & SU.To_String (Declaration.Source_Name),
+                              Declaration.Location);
+                        end if;
                      when M.Task_Type | M.Protected_Type =>
                         W := Warn
                           (Diagnose (Task_Protected_Id,

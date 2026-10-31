@@ -33,6 +33,8 @@ package body Hac_Bindgen.Dump_Reader is
       Kind      : Entity_Kind;
       Own_Kind  : M.Type_Kind := M.Unknown_Type;
       --  Type_Entity: the entity own category.
+      Has_Character_Literals : Boolean := False;
+      --  Enumeration entities: some literal is a character literal.
       Base_Name : SU.Unbounded_String;
       Base_Ref  : SU.Unbounded_String;
       --  Subtype_Entity: the base type mark and its resolved identity.
@@ -344,7 +346,8 @@ package body Hac_Bindgen.Dump_Reader is
                  (M.Type_Identity'
                     (Source_Name    => SU.To_Unbounded_String (Name),
                      Canonical_Name => SU.To_Unbounded_String (Ref),
-                     Kind           => Kind));
+                     Kind           => Kind,
+                     Has_Character_Literals => False));
                Result.Known       := True;
                Result.Has_Unknown := False;
                return Result;
@@ -365,7 +368,8 @@ package body Hac_Bindgen.Dump_Reader is
                        (M.Type_Identity'
                           (Source_Name    => SU.To_Unbounded_String (Fallback_Name),
                            Canonical_Name => SU.To_Unbounded_String (Ref),
-                           Kind           => M.Unknown_Type));
+                           Kind           => M.Unknown_Type,
+                           Has_Character_Literals => False));
                      Result.Known       := False;
                      Result.Has_Unknown := True;
                      return Result;
@@ -390,7 +394,13 @@ package body Hac_Bindgen.Dump_Reader is
                              (if E.Kind = Subtype_Entity
                                 and then not Sub.Chain.Is_Empty
                               then Sub.Chain.Last_Element.Kind
-                              else E.Own_Kind));
+                              else E.Own_Kind),
+                           Has_Character_Literals =>
+                             (if E.Kind = Subtype_Entity
+                                and then not Sub.Chain.Is_Empty
+                              then Sub.Chain.Last_Element
+                                     .Has_Character_Literals
+                              else E.Has_Character_Literals));
 
                  Result.Chain.Append (Self);
                  Result.Chain.Append (Sub.Chain);
@@ -689,6 +699,7 @@ package body Hac_Bindgen.Dump_Reader is
                 Loc_Image => SU.To_Unbounded_String (Tok (Tokens, 4)),
                 Kind      => Subtype_Entity,
                 Own_Kind  => M.Unknown_Type,
+                Has_Character_Literals => False,
                 Base_Name => SU.To_Unbounded_String (Tok (Tokens, 6)),
                 Base_Ref  => SU.To_Unbounded_String (Tok (Tokens, 8))));
 
@@ -705,20 +716,25 @@ package body Hac_Bindgen.Dump_Reader is
                Literals : constant String :=
                  Definition_Of (Tokens, 6);
                --  The literals come space-separated; the mirror text
-               --  rebuilds the aggregate form.
+               --  rebuilds the aggregate form. A character literal is
+               --  the only literal shape carrying a quote character,
+               --  which HAC cannot parse ([A005], HACB0017).
+               Has_Char_Literals : constant Boolean :=
+                 (for some C of Literals => C = ''');
             begin
                Pending.Mirrorable := True;
                Pending.Mirror_Text :=
                  SU.To_Unbounded_String ("is (" & Commas_Of (Literals) & ")");
+               Entities.Append
+                 (Entity_Info'
+                   (Name      => SU.To_Unbounded_String (Tok (Tokens, 2)),
+                   Loc_Image => SU.To_Unbounded_String (Tok (Tokens, 4)),
+                   Kind      => Type_Entity,
+                   Own_Kind  => M.Enumeration_Type,
+                   Has_Character_Literals => Has_Char_Literals,
+                   Base_Name => SU.Null_Unbounded_String,
+                   Base_Ref  => SU.Null_Unbounded_String));
             end;
-            Entities.Append
-              (Entity_Info'
-                (Name      => SU.To_Unbounded_String (Tok (Tokens, 2)),
-                Loc_Image => SU.To_Unbounded_String (Tok (Tokens, 4)),
-                Kind      => Type_Entity,
-                Own_Kind  => M.Enumeration_Type,
-                Base_Name => SU.Null_Unbounded_String,
-                Base_Ref  => SU.Null_Unbounded_String));
 
          elsif Kind = "type" then
             Expect (Tokens'Length >= 5, Line_No, "malformed type line");
@@ -743,6 +759,7 @@ package body Hac_Bindgen.Dump_Reader is
                    Loc_Image => SU.To_Unbounded_String (Tok (Tokens, 4)),
                    Kind      => Type_Entity,
                    Own_Kind  => Kind,
+                   Has_Character_Literals => False,
                    Base_Name => SU.Null_Unbounded_String,
                    Base_Ref  => SU.Null_Unbounded_String));
             end;

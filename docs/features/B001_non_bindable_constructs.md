@@ -68,6 +68,7 @@ stable key: it never changes meaning.
 | HACB0014 | `System.Address` or native pointer representation | unchecked address conversions have no defined VM semantics |
 | HACB0015 | controlled type as boundary value | finalization has no counterpart in the VM |
 | HACB0016 | binding requiring semantic inference (ownership, lifetime, aliasing, thread safety, units, free-on-return) | those decisions belong to the application, not to the generator |
+| HACB0017 | enumeration with character literals | HAC only accepts identifier literals |
 
 ## Classification rules for the first profile
 
@@ -88,11 +89,14 @@ stable key: it never changes meaning.
 - Inherently non-representable declarations warn by themselves, where
   they stand: access types (`HACB0003`), exception declarations
   (`HACB0011`), generic units (`HACB0007`), task and protected
-  declarations (`HACB0006`). Representation-choice types (record,
-  tagged, private) are only warned when they appear as a boundary
-  value: they may become handles in a later profile.
+  declarations (`HACB0006`), enumerations with character literals
+  (`HACB0017`, [A005](A005_enumerations.md)). Representation-choice
+  types (record, tagged, private) are only warned when they appear as
+  a boundary value: they may become handles in a later profile.
 - A type is classified through the root of its subtype chain:
-  integer, floating-point, boolean and enumeration roots are bindable;
+  integer, floating-point, boolean and enumeration roots are bindable,
+  except an enumeration root with character literals, which warns
+  `HACB0017` ([A005](A005_enumerations.md));
   access roots warn `HACB0003`; array, record and string roots warn
   `HACB0005`; tagged and private roots warn `HACB0004`; fixed-point
   and modular roots warn `HACB0010`; task and protected roots warn

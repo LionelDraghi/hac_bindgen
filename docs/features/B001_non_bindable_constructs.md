@@ -19,6 +19,7 @@ operations are [C002](C002_boundary_errors.md).
   - [Scenario: pointer-ish declarations are all warned out](#scenario-pointer-ish-declarations-are-all-warned-out)
   - [Scenario: composite and tagged boundary declarations are warned out](#scenario-composite-and-tagged-boundary-declarations-are-warned-out)
   - [Scenario: nothing is silently dropped](#scenario-nothing-is-silently-dropped)
+  - [Scenario: copy-back is refused where it cannot be generated](#scenario-copy-back-is-refused-where-it-cannot-be-generated)
 - [Verification beyond bbt](#verification-beyond-bbt)
 - [Design implications](#design-implications)
 
@@ -56,10 +57,10 @@ stable key: it never changes meaning.
 | HACB0002 | operator symbol (`"+"`, ...) | not a valid callback name |
 | HACB0003 | access type or access parameter | no pointer representation across the VM boundary |
 | HACB0004 | limited, interface, class-wide or abstract type as boundary value | the tool does not own object representation ([A004](A004_handles.md): private and tagged private types are handles) |
-| HACB0005 | record, discriminated record, anonymous array or record as boundary value | composite mapping deferred; explicit profile first |
+| HACB0005 | record, discriminated record or array as boundary value | composite mapping deferred; explicit profile first ([A006](A006_strings.md): `String` itself is a copy, not a composite warning) |
 | HACB0006 | task or protected object | no VM representation |
 | HACB0007 | generic package or subprogram | instantiate natively, bind the instance |
-| HACB0008 | `out` / `in out` parameter | deferred until the copy-back semantics is demonstrated |
+| HACB0008 | `out` / `in out` parameter of a function, or `out` of a handleable type or of `String` | HAC functions have in-only parameters; a fresh `out` handleable value cannot be default-constructed; a string container is by-reference, the callee cannot size it ([A002](A002_facade_generation.md#copy-back), [A006](A006_strings.md)) |
 | HACB0009 | default parameter expression | HAC caller supplies every argument |
 | HACB0010 | fixed-point or modular type | conversion semantics to be demonstrated first |
 | HACB0011 | exception declaration | Ada exception identity does not cross the boundary |
@@ -69,6 +70,7 @@ stable key: it never changes meaning.
 | HACB0015 | controlled type as boundary value | finalization has no counterpart in the VM |
 | HACB0016 | binding requiring semantic inference (ownership, lifetime, aliasing, thread safety, units, free-on-return) | those decisions belong to the application, not to the generator |
 | HACB0017 | enumeration with character literals | HAC only accepts identifier literals |
+| HACB0018 | constrained string or array subtype as boundary value | HAC exchanges only VStrings across the boundary ([A006](A006_strings.md)) |
 
 ## Classification rules for the first profile
 
@@ -100,8 +102,10 @@ stable key: it never changes meaning.
   except an enumeration root with character literals, which warns
   `HACB0017` ([A005](A005_enumerations.md)); a private partial view
   (not limited, not abstract) is bound as a handle
-  ([A004](A004_handles.md)); access roots warn `HACB0003`; array,
-  record and string roots warn `HACB0005`; tagged and other private
+  ([A004](A004_handles.md)); string roots are bound as copies
+  ([A006](A006_strings.md)), except a constrained string subtype,
+  which warns `HACB0018`; access roots warn `HACB0003`; array and
+  record roots warn `HACB0005`; tagged and other private
   roots warn `HACB0004`; fixed-point
   and modular roots warn `HACB0010`; task and protected roots warn
   `HACB0006`; a type the analyser cannot resolve to a known category
@@ -129,6 +133,8 @@ the roadmap and the specifications:
 | B001-05 | pointer-ish declarations are all warned out |
 | B001-06 | composite and tagged boundary declarations are warned out |
 | B001-07 | nothing is silently dropped |
+| B001-08 | copy-back is refused where it cannot be generated |
+| B001-09 | the refused string shapes are warned out ([A006](A006_strings.md)) |
 | B001-02 | the generated binding covers the bindable part only (the [A002-05] scenario of [A002](A002_facade_generation.md)) |
 | B001-03 | `check` reports the same classification as `generate` (pinned by the identical warning and summary formats of the B001-01, B001-05 and [A002-05] scenarios) |
 
@@ -247,6 +253,32 @@ pinning each side show the same warning and summary formats.
   exotic_probe.ads:8:6: warning HACB0011: exception declaration is not bound: Ada exception identity does not cross the boundary
   Exotic_Probe: 0 operations bound, 0 not bound (see warnings)
   ```
+
+### Scenario: copy-back is refused where it cannot be generated
+
+The copy-back of [A002](A002_facade_generation.md#copy-back) binds
+procedures with scalar `out` / `in out` parameters; the two shapes it
+cannot generate keep [HACB0008], with the reason that applies.
+
+- Given the new directory `run`
+- Given the new file `run/refused_api.ads` containing
+  ```ada
+  package Refused_Api is
+     type Widget is tagged private;
+     function Trick (X : out Integer) return Integer;
+     procedure Swap (W : out Widget);
+  private
+     type Widget is tagged record
+        Id : Integer;
+     end record;
+  end Refused_Api;
+  ```
+- When I successfully run `../bin/hac-bindgen check run/refused_api.ads`
+- Then the exit code is `0`
+- And the output contains `warning HACB0008`
+- And the output contains `HAC functions have in-only parameters`
+- And the output contains `the callback cannot default-construct the native object`
+- And the output contains `0 operations bound, 2 not bound (see warnings)`
 
 ## Verification beyond bbt
 

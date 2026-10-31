@@ -27,6 +27,7 @@ package body Hac_Bindgen.Traversal is
    use type M.Declaration_Kind;
    use type M.Parameter_Mode;
    use type M.Resolution_State;
+   use type M.Type_Kind;
 
    --  The catalogue of the first profile ([B001]). The identifiers are
    --  stable: they never change meaning.
@@ -45,6 +46,7 @@ package body Hac_Bindgen.Traversal is
    Address_Id        : constant String := "HACB0014";
    Not_Covered_Id    : constant String := "HACB0016";
    Char_Literal_Id   : constant String := "HACB0017";
+   Bounded_String_Id : constant String := "HACB0018";
 
    --  Why a construct cannot be bound, without its location: several
    --  checks share the same wording.
@@ -167,9 +169,28 @@ package body Hac_Bindgen.Traversal is
               (Access_Id,
                "no pointer representation across the VM boundary");
 
+         when M.String_Type =>
+            --  A string crosses as a copy, both ways ([A006]):
+            --  native->HAC copies into a VString, HAC->native returns
+            --  a fresh String value; nothing is shared, so the
+            --  ownership question of [S003] is settled by
+            --  construction.
+            --  A constrained string subtype cannot cross: the VM
+            --  exchanges only VStrings, and the copy-back would
+            --  reinterpret the register into the script's array
+            --  representation ([A006], HACB0018).
+            if not Ref.Subtype_Chain.Is_Empty
+              and then Ref.Subtype_Chain.First_Element
+                         .Is_Bounded_Composite
+            then
+               return Diagnose
+                 (Bounded_String_Id,
+                  "HAC exchanges only VStrings across the boundary");
+            end if;
+            return No_Diagnosis;
+
          when M.Array_Type
             | M.Record_Type
-            | M.String_Type
          =>
             return Diagnose
               (Composite_Id,
@@ -370,6 +391,21 @@ package body Hac_Bindgen.Traversal is
                           (Mode_Id,
                            "the callback cannot default-construct"
                            & " the native object"),
+                        "parameter " & SU.To_String (Item.Source_Name),
+                        Item.Location);
+                     exit;
+                  elsif Item.Mode = M.Out_Mode
+                    and then not Item.Parameter_Type.Subtype_Chain.Is_Empty
+                    and then Item.Parameter_Type.Subtype_Chain
+                               .Last_Element.Kind = M.String_Type
+                  then
+                     --  Strings cross by reference: the callee cannot
+                     --  size an out string container ([A006]).
+                     W := Warn
+                       (Diagnose
+                          (Mode_Id,
+                           "the native string container is by-reference:"
+                           & " the callee cannot size it"),
                         "parameter " & SU.To_String (Item.Source_Name),
                         Item.Location);
                      exit;

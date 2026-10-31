@@ -231,29 +231,67 @@ procedure Hac_Bindgen_Backend is
             ST : constant LAL.Subtype_Decl := LAL.As_Subtype_Decl (Decl);
             SI : constant LAL.Subtype_Indication := LAL.F_Subtype (ST);
             C  : constant LAL.Constraint := LAL.F_Constraint (SI);
-            RC : constant LAL.Range_Constraint := C.As_Range_Constraint;
+
+            --  One static range: low .. high as a binary operation.
+            procedure Put_Constraint (Range_Expr : LAL.Expr) is
+               BO : constant LAL.Bin_Op := Range_Expr.As_Bin_Op;
+            begin
+               if not BO.Is_Null
+                 and then Static_Int (BO.F_Left) /= "(dynamic)"
+                 and then Static_Int (BO.F_Right) /= "(dynamic)"
+               then
+                  Put_Line
+                    ("    constraint " & Static_Int (BO.F_Left)
+                     & " .. " & Static_Int (BO.F_Right));
+               else
+                  Put_Line ("    constraint (dynamic)");
+               end if;
+            end Put_Constraint;
          begin
             Put_Line
               ("  subtype " & Name & " loc " & Loc
                & " base " & Txt (SI.F_Name)
                & " resolved " & Identity_Of (SI.F_Name));
-            if not RC.Is_Null then
+            if C.Is_Null then
+               null;
+
+            elsif C.Kind = LCL.Ada_Range_Constraint then
                declare
                   Range_Expr : constant LAL.Expr :=
-                    LAL.F_Range (LAL.F_Range (RC));
-                  BO : constant LAL.Bin_Op := Range_Expr.As_Bin_Op;
+                    LAL.F_Range (LAL.F_Range (C.As_Range_Constraint));
                begin
-                  if not BO.Is_Null
-                    and then Static_Int (BO.F_Left) /= "(dynamic)"
-                    and then Static_Int (BO.F_Right) /= "(dynamic)"
+                  Put_Constraint (Range_Expr);
+               end;
+
+            elsif C.Kind = LCL.Ada_Composite_Constraint then
+               --  An index constraint: reported when it constrains
+               --  exactly one index with a static range, as
+               --  "String (1 .. 8)" does ([A006]); anything else —
+               --  more indexes, discriminants, dynamic bounds — is
+               --  reported as dynamic.
+               declare
+                  CC : constant LAL.Composite_Constraint :=
+                    C.As_Composite_Constraint;
+               begin
+                  if LAL.P_Is_Index_Constraint (CC)
+                    and then CC.F_Constraints.Children_Count = 1
+                    and then CC.F_Constraints.First_Child.Kind
+                               = LCL.Ada_Composite_Constraint_Assoc
+                    and then CC.F_Constraints.First_Child
+                               .As_Composite_Constraint_Assoc
+                               .F_Constraint_Expr.Kind = LCL.Ada_Bin_Op
                   then
-                     Put_Line
-                       ("    constraint " & Static_Int (BO.F_Left)
-                        & " .. " & Static_Int (BO.F_Right));
+                     Put_Constraint
+                       (CC.F_Constraints.First_Child
+                          .As_Composite_Constraint_Assoc
+                          .F_Constraint_Expr.As_Expr);
                   else
                      Put_Line ("    constraint (dynamic)");
                   end if;
                end;
+
+            else
+               Put_Line ("    constraint (dynamic)");
             end if;
          end;
 

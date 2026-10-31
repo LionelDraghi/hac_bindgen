@@ -18,6 +18,7 @@ Libadalang.
   - [Scenario: type references resolve to their declaration](#scenario-type-references-resolve-to-their-declaration)
   - [Scenario: enumeration literals in declaration order](#scenario-enumeration-literals-in-declaration-order)
   - [Scenario: static values are evaluated](#scenario-static-values-are-evaluated)
+  - [Scenario: an index constraint is dumped](#scenario-an-index-constraint-is-dumped)
   - [Scenario: private part is separated from the public API](#scenario-private-part-is-separated-from-the-public-api)
   - [Scenario: declarations that are not API declarations are skipped](#scenario-declarations-that-are-not-api-declarations-are-skipped)
   - [Scenario: unusual declarations are reported, not dropped](#scenario-unusual-declarations-are-reported-not-dropped)
@@ -261,6 +262,34 @@ expected dump. Parameter lines are optional in the grammar.
     constant Value loc probe_fixture.ads:3:6 type Integer resolved standard.Integer value 2
   end Probe_Fixture
   ```
+
+### Scenario: an index constraint is dumped
+
+An index constraint is not a range constraint: casting it raised a
+`Constraint_Error` in an earlier version (same defect family as the
+parameterless crash). The backend dispatches on the constraint node
+kind; an index constraint constraining exactly one index with a
+static range produces the same `constraint` line — the mirror syntax
+(`range` versus parentheses) is the reader's decision, driven by the
+base root's kind, not the dump's ([A006]).
+
+- Given the new file `probe_fixture.ads` containing
+  ```ada
+  package Probe_Fixture is
+    subtype Short_Text is String (1 .. 8);
+  end Probe_Fixture;
+  ```
+- When I successfully run `../tools/libadalang_backend/bin/hac_bindgen_backend probe_fixture.ads`
+- Then the output is
+  ```text
+  hac-bindgen-backend 0.1.0-dev format 1
+  package Probe_Fixture loc probe_fixture.ads:1:11
+  public
+    subtype Short_Text loc probe_fixture.ads:2:13 base String resolved standard.String
+      constraint 1 .. 8
+  end Probe_Fixture
+  ```
+- And there is no error output
 
 ### Scenario: private part is separated from the public API
 

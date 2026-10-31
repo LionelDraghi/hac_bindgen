@@ -53,6 +53,10 @@ package Hac_Bindgen.Model is
       Handleable     : Boolean := False;
       --  A private partial view (not limited, not abstract) crossed
       --  as an integer handle ([A004], HACB0004 narrowed).
+      Is_Bounded_Composite : Boolean := False;
+      --  A string or array subtype carrying a constraint: it cannot
+      --  cross the boundary, which exchanges only VStrings ([A006],
+      --  HACB0018).
    end record;
 
    package Type_Identity_Vectors is new Ada.Containers.Vectors

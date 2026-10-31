@@ -38,6 +38,9 @@ package body Hac_Bindgen.Dump_Reader is
       Handleable : Boolean := False;
       --  Type_Entity: a private partial view crossed as an integer
       --  handle ([A004]).
+      Is_Bounded_Composite : Boolean := False;
+      --  Subtype_Entity: a string or array subtype carrying a
+      --  constraint: it cannot cross as a VString ([A006], HACB0018).
       Base_Name : SU.Unbounded_String;
       Base_Ref  : SU.Unbounded_String;
       --  Subtype_Entity: the base type mark and its resolved identity.
@@ -283,6 +286,11 @@ package body Hac_Bindgen.Dump_Reader is
       Pending        : M.Public_Declaration;
       Have_Pending   : Boolean := False;
       Pending_Public : Boolean := False;
+      Pending_Base_Root : M.Type_Kind := M.Unknown_Type;
+      --  A subtype's base root kind, set when the subtype line is
+      --  read: the mirror syntax of a constraint follows it —
+      --  "range" for scalars, parentheses for array and string
+      --  roots ([A006]).
 
       use type M.Declaration_Kind;
 
@@ -351,7 +359,8 @@ package body Hac_Bindgen.Dump_Reader is
                      Canonical_Name => SU.To_Unbounded_String (Ref),
                      Kind           => Kind,
                      Has_Character_Literals => False,
-                     Handleable     => False));
+                     Handleable     => False,
+                     Is_Bounded_Composite => False));
                Result.Known       := True;
                Result.Has_Unknown := False;
                return Result;
@@ -374,7 +383,8 @@ package body Hac_Bindgen.Dump_Reader is
                            Canonical_Name => SU.To_Unbounded_String (Ref),
                            Kind           => M.Unknown_Type,
                            Has_Character_Literals => False,
-                           Handleable     => False));
+                           Handleable     => False,
+                           Is_Bounded_Composite => False));
                      Result.Known       := False;
                      Result.Has_Unknown := True;
                      return Result;
@@ -410,7 +420,13 @@ package body Hac_Bindgen.Dump_Reader is
                              (if E.Kind = Subtype_Entity
                                 and then not Sub.Chain.Is_Empty
                               then Sub.Chain.Last_Element.Handleable
-                              else E.Handleable));
+                              else E.Handleable),
+                           Is_Bounded_Composite =>
+                             E.Is_Bounded_Composite
+                             or else (E.Kind = Subtype_Entity
+                                        and then not Sub.Chain.Is_Empty
+                                      and then Sub.Chain.First_Element
+                                                 .Is_Bounded_Composite));
 
                  Result.Chain.Append (Self);
                  Result.Chain.Append (Sub.Chain);
@@ -750,6 +766,15 @@ package body Hac_Bindgen.Dump_Reader is
             Pending.Mirrorable := True;
             Pending.Mirror_Text :=
               SU.To_Unbounded_String ("is " & Tok (Tokens, 6));
+            declare
+               Sub : constant Resolved_Type :=
+                 Chain_Of (Tok (Tokens, 8), Tok (Tokens, 6));
+            begin
+               Pending_Base_Root :=
+                 (if Sub.Chain.Is_Empty
+                  then M.Unknown_Type
+                  else Sub.Chain.Last_Element.Kind);
+            end;
             Entities.Append
               (Entity_Info'
                 (Name      => SU.To_Unbounded_String (Tok (Tokens, 2)),
@@ -758,6 +783,7 @@ package body Hac_Bindgen.Dump_Reader is
                 Own_Kind  => M.Unknown_Type,
                 Has_Character_Literals => False,
                 Handleable => False,
+                Is_Bounded_Composite => False,
                 Base_Name => SU.To_Unbounded_String (Tok (Tokens, 6)),
                 Base_Ref  => SU.To_Unbounded_String (Tok (Tokens, 8))));
 
@@ -791,6 +817,7 @@ package body Hac_Bindgen.Dump_Reader is
                    Own_Kind  => M.Enumeration_Type,
                    Has_Character_Literals => Has_Char_Literals,
                    Handleable => False,
+                   Is_Bounded_Composite => False,
                    Base_Name => SU.Null_Unbounded_String,
                    Base_Ref  => SU.Null_Unbounded_String));
             end;
@@ -823,6 +850,7 @@ package body Hac_Bindgen.Dump_Reader is
                    Own_Kind  => Kind,
                    Has_Character_Literals => False,
                    Handleable => Handleable,
+                   Is_Bounded_Composite => False,
                    Base_Name => SU.Null_Unbounded_String,
                    Base_Ref  => SU.Null_Unbounded_String));
             end;
@@ -922,24 +950,55 @@ package body Hac_Bindgen.Dump_Reader is
             Expect (Pending.Kind = M.Type_Declaration, Line_No,
                     "constraint line outside a type declaration");
 
-            if Tokens'Length = 2 then
-               Expect (Tok (Tokens, 2) = "(dynamic)", Line_No,
-                       "malformed constraint line");
-               Pending.Mirrorable := False;
-               Pending.Mirror_Text :=
-                 Pending.Mirror_Text & " range (dynamic)";
-            else
-               Expect (Tokens'Length = 4, Line_No, "malformed constraint line");
-               Expect (Tok (Tokens, 3) = "..", Line_No,
-                       "malformed constraint line");
-               Expect (Is_Decimal_Integer (Tok (Tokens, 2)), Line_No,
-                       "malformed constraint line");
-               Expect (Is_Decimal_Integer (Tok (Tokens, 4)), Line_No,
-                       "malformed constraint line");
-               Pending.Mirror_Text :=
-                 Pending.Mirror_Text & " range "
-                   & Tok (Tokens, 2) & " .. " & Tok (Tokens, 4);
-            end if;
+            --  The mirror syntax follows the base root ([A006]):
+            --  "range 1 .. 10" for a scalar subtype,
+            --  "(1 .. 8)" for an array or string root.
+            declare
+               use type M.Type_Kind;
+               Paren_Form : constant Boolean :=
+                 Pending_Base_Root = M.String_Type
+                 or else Pending_Base_Root = M.Array_Type;
+            begin
+               if Paren_Form then
+                  --  A constrained string or array subtype cannot
+                  --  cross the boundary: the VM exchanges only
+                  --  VStrings ([A006], HACB0018).
+                  declare
+                     E : Entity_Info := Entities.Last_Element;
+                  begin
+                     E.Is_Bounded_Composite := True;
+                     Entities.Replace_Element (Entities.Last_Index, E);
+                  end;
+               end if;
+
+               if Tokens'Length = 2 then
+                  Expect (Tok (Tokens, 2) = "(dynamic)", Line_No,
+                          "malformed constraint line");
+                  Pending.Mirrorable := False;
+                  Pending.Mirror_Text :=
+                    Pending.Mirror_Text
+                    & (if Paren_Form
+                       then " (dynamic)"
+                       else " range (dynamic)");
+               else
+                  Expect (Tokens'Length = 4, Line_No,
+                          "malformed constraint line");
+                  Expect (Tok (Tokens, 3) = "..", Line_No,
+                          "malformed constraint line");
+                  Expect (Is_Decimal_Integer (Tok (Tokens, 2)), Line_No,
+                          "malformed constraint line");
+                  Expect (Is_Decimal_Integer (Tok (Tokens, 4)), Line_No,
+                          "malformed constraint line");
+                  Pending.Mirror_Text :=
+                    Pending.Mirror_Text
+                    & (if Paren_Form
+                       then " ("
+                              & Tok (Tokens, 2) & " .. " & Tok (Tokens, 4)
+                            & ")"
+                       else " range "
+                              & Tok (Tokens, 2) & " .. " & Tok (Tokens, 4));
+               end if;
+            end;
 
          else
             Fail (Line_No, "unknown sub-line """ & First & """");

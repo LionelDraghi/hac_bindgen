@@ -73,8 +73,9 @@ is generated end to end.
 
 - [x] Handles and enumerations ([S003], new `Annn` pages — [A004],
       [A005])
-- [ ] Strings end to end (ownership demonstrated, not assumed)
-- [ ] `out`/`in out` copy-back ([A002-06], [HACB0008] retired)
+- [x] Strings end to end, copy both ways ([A006])
+- [x] `out`/`in out` copy-back ([A002-06], [HACB0008] narrowed to
+      functions and `out` of a handleable type)
 - [ ] Several bound packages registering into one HAC environment
       (name collisions included)
 - [ ] Repeated script execution in the same witness application,

@@ -34,6 +34,8 @@ package body Hac_Bindgen.Generation is
      (No_Conversion,     --  procedures have no result
       Direct_Integer,    --  To_HAC / To_Native (standard Integer)
       Direct_Float,      --  To_HAC / To_Native (standard Long_Float)
+      Direct_String,     --  To_HAC / To_Native (String, copies both
+                         --  ways; [A006])
       Any_Integer_Kind,  --  instantiated pair on the type mark
       Any_Float_Kind,
       Any_Enum_Kind,     --  enumerations, including Boolean
@@ -116,6 +118,10 @@ package body Hac_Bindgen.Generation is
                     then Direct_Float else Any_Float_Kind);
          when M.Boolean_Type | M.Enumeration_Type =>
             return Any_Enum_Kind;
+         when M.String_Type =>
+            --  A string crosses as a copy, both ways ([A006]): the
+            --  direct String overloads of To_HAC / To_Native.
+            return Direct_String;
          when M.Tagged_Type | M.Private_Type =>
             --  A private partial view crosses as an integer handle
             --  ([A004]); anything else stays a traversal warning.
@@ -205,6 +211,11 @@ package body Hac_Bindgen.Generation is
            or else Mark = "Long_Long_Float"
          then
             return "Real";
+         elsif Mark = "String" then
+            --  HAC rejects unconstrained String parameters: the HAC
+            --  side uses HAT's VString ([A006]); the script builds
+            --  one with "+\"...\"".
+            return "VString";
          elsif Mark = "Short_Integer"
            or else Mark = "Short_Short_Integer"
            or else Mark = "Long_Integer"
@@ -236,7 +247,18 @@ package body Hac_Bindgen.Generation is
                then Text (Base_Last + 1 .. Text'Last)
                else "");
          begin
-            return "is " & HAC_Mark (Base) & Rest;
+            --  A constrained array or string subtype keeps its base
+            --  verbatim: the parenthesis constraint syntax belongs
+            --  to array types, and VString takes no constraint
+            --  ([A006]); only the scalar "range" form remaps its
+            --  base ("is Small range ..." becomes
+            --  "is Integer range ...").
+            return "is "
+              & (if Rest'Length > 1
+                   and then Rest (Rest'First + 1) = '('
+                 then Base
+                 else HAC_Mark (Base))
+              & Rest;
          end;
       end HAC_Mirror;
 
@@ -299,6 +321,7 @@ package body Hac_Bindgen.Generation is
          if Mark = "Integer"
            or else Mark = "Long_Float"
            or else Mark = "Boolean"
+           or else Mark = "String"
          then
             return Mark;
          else
@@ -346,7 +369,7 @@ package body Hac_Bindgen.Generation is
          Call : constant String := "Data (" & Image (Slot) & ")";
       begin
          case P.Kind is
-            when Direct_Integer | Direct_Float =>
+            when Direct_Integer | Direct_Float | Direct_String =>
                return "To_Native (" & Call & ")";
             when Handle_Kind =>
                --  The registry object the handle designates,
@@ -375,7 +398,7 @@ package body Hac_Bindgen.Generation is
       is
       begin
          case Kind is
-            when Direct_Integer | Direct_Float =>
+            when Direct_Integer | Direct_Float | Direct_String =>
                return "To_HAC (" & Value & ")";
             when Handle_Kind =>
                return "To_HAC (Integer (" & Mark
@@ -546,12 +569,15 @@ package body Hac_Bindgen.Generation is
                Has_Functions := True;
             end if;
             for P of S.Params loop
-               if HAC_Mark (To_String (P.Type_Mark)) = "Real" then
+               if HAC_Mark (To_String (P.Type_Mark))
+                    in "Real" | "VString"
+               then
                   Needs_HAT := True;
                end if;
             end loop;
             if S.Is_Function
-              and then HAC_Mark (To_String (S.Result_Mark)) = "Real"
+              and then HAC_Mark (To_String (S.Result_Mark))
+                         in "Real" | "VString"
             then
                Needs_HAT := True;
             end if;

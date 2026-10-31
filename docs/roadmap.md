@@ -43,8 +43,9 @@ templates.
       model with Libadalang (selected 2026-10-29, see
       `docs/dev/design_discussions.md`); the comparison with a second
       backend is a gadget
-- [ ] Licensing of the selected backend recorded before the decision
-      (concern indexed in `docs/dev/concerns.md`)
+- [x] Licensing of the selected backend recorded before the release
+      (no blocking incompatibility, decision of 2026-10-31 in
+      `docs/dev/design_discussions.md`)
 - [x] Traversal contract: every public declaration classified bindable
       or not ([S006], [B001])
 

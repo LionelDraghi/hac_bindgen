@@ -24,6 +24,7 @@ Statuses: Discussing | Accepted | Rejected | Superseded.
 - [Analysis backend evaluation](#analysis-backend-evaluation)
   - [Libadalang](#libadalang)
   - [Dmitry Kazakov's Ada Syntax Analyzer](#dmitry-kazakovs-ada-syntax-analyzer)
+- [Backend license and redistribution review](#backend-license-and-redistribution-review)
 - [Interchange format between backend and main crate](#interchange-format-between-backend-and-main-crate)
   - [JSON](#json)
   - [TOML](#toml)
@@ -250,10 +251,9 @@ dump), not on syntax coverage.
 - Do not link Libadalang into the main crate until upstream `libgpr2`
   supports GNAT 16 (contributing the port there is the medium-term
   fix; `gnat_native` 16.2.0-pre0 remains untested).
-- Complete the license and redistribution review of the Libadalang
-  dependency closure (`GNATCOLL` crates are
-  `GPL-3.0-or-later WITH GCC-exception-3.1`; initial inventory only)
-  before release; tracked as a concern.
+- The license and redistribution review of the Libadalang dependency
+  closure is its own decision (2026-10-31): no blocking
+  incompatibility, see the license review section below.
 - Probe-level coverage does not establish full Ada 2022 syntax or
   inter-unit resolution (`with Interfaces` was not resolved in the
   trial); extend the probe with these cases before relying on them in
@@ -337,6 +337,68 @@ discussion, not to this internal contract.
 - Format-1 facts that the model does not carry yet (enum literals,
   static constraints and values, unhandled kind names) are checked for
   conformance by the reader and dropped; tracked as a concern.
+
+### Backend license and redistribution review
+
+Status: Accepted (no blocking incompatibility)
+Date: 2026-10-31
+Related: M3; [backend licensing concern](concerns.md), now closed
+
+## Context
+
+The backend binary links the Libadalang dependency closure; the main
+crate never does (separate process, text dump only). The initial
+inventory (2026-10-29) flagged the GNATCOLL crates as
+`GPL-3.0-or-later WITH GCC-exception-3.1` and left the redistribution
+review open.
+
+## Evidence
+
+Licenses verified against the actual sources of the crates in the
+build tree (not only the Alire manifests), on 2026-10-31:
+
+| Crate | License | Verified |
+|---|---|---|
+| libadalang, langkit_support | Apache-2.0 | `SPDX-License-Identifier: Apache-2.0` in the source headers |
+| gnatcoll, gnatcoll_gmp, gnatcoll_iconv, gnatcoll_projects | GPL-3.0-or-later WITH GCC-exception-3.1 | `COPYING3` + `COPYING.RUNTIME` shipped |
+| xmlada, libadalang_tools | GPL-3.0-or-later WITH GCC-exception-3.1 | same |
+| adasat, libgpr2 | Apache-2.0 WITH LLVM-exception | Alire manifest |
+
+What `hac_bindgen_backend` actually links: `GNATCOLL.GMP.Integers`
+(hence gnatcoll_gmp and gnatcoll core) and Libadalang with its
+Langkit support — the analysis core is Apache-2.0. xmlada,
+gnatcoll_projects and libadalang_tools are in the build closure but
+nothing of them is referenced, so nothing is linked into the binary.
+
+## Decision
+
+No blocking incompatibility:
+
+1. The GCC Runtime Library Exception 3.1 exists exactly for this: a
+   compiler-generated program containing portions of such a library is
+   conveyed under the terms of the distributor's choice, provided the
+   library's own sources stay available under GPL-3 - satisfied by
+   construction for an Alire crate (the dependency sources come from
+   the index).
+2. The format-1 dump describes the user's source (names, locations,
+   types): it is data derived from the user's input, not a derivative
+   work of Libadalang. With the process separation, the Apache-2.0
+   main crate is clean beyond doubt.
+3. GMP itself (the C library bound by gnatcoll_gmp) is LGPL-3:
+   statically linked by default. The project distributes sources only
+   (Alire) - each user's build links their own GMP - so no
+   redistribution obligation applies to the project. This becomes a
+   constraint only if prebuilt binaries are ever distributed: then the
+   LGPL section 4 means (relink capability) must be provided.
+
+## Consequences
+
+- The backend and the main crate may be distributed as Apache-2.0.
+- If prebuilt binaries are ever shipped, revisit the LGPL-3 clause for
+  GMP (provide relink means) and ship the GPL-covered library sources
+  or their fetch path.
+- `libadalang_tools` stays a backend dependency for `make metrics`
+  only; nothing of it is linked into the backend binary.
 
 ## Template for a new discussion
 

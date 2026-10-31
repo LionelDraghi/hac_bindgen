@@ -724,14 +724,57 @@ package body Hac_Bindgen.Generation is
 
       procedure Collect_Mirrors is
 
+         --  Does the record declaration of the given mark carry the
+         --  type as a component mark, transitively through its
+         --  nested records ([A009])? The HAC-side mirror of a bound
+         --  record references every component type, so they are
+         --  mirrored too. A record never contains itself, and
+         --  component cycles would not be bound anyway.
+         function Carried_By (Mark : String; Name : String) return Boolean
+         is
+         begin
+            for Declaration of Pkg.Declarations loop
+               if Declaration.Kind = M.Type_Declaration
+                 and then To_String (Declaration.Source_Name) = Mark
+               then
+                  for C of Declaration.Components loop
+                     declare
+                        CMark : constant String :=
+                          To_String (C.Component_Type.Source_Name);
+                     begin
+                        if CMark = Name then
+                           return True;
+                        end if;
+                        if not C.Component_Type.Subtype_Chain.Is_Empty
+                          and then
+                            C.Component_Type.Subtype_Chain.Last_Element.Kind
+                              in M.Record_Type
+                          and then Carried_By (CMark, Name)
+                        then
+                           return True;
+                        end if;
+                     end;
+                  end loop;
+                  return False;
+               end if;
+            end loop;
+            return False;
+         end Carried_By;
+
          --  Does a bound profile refer to the declaration, directly
-         --  by its mark or through a handle root ([A004])?
+         --  by its mark, through a handle root ([A004]), or as a
+         --  component of a bound record ([A009])?
          function Referenced_By_Bound (Name : String) return Boolean is
          begin
             for S of Bound loop
                for P of S.Params loop
                   if To_String (P.Type_Mark) = Name
                     or else To_String (P.Handle_Root) = Name
+                  then
+                     return True;
+                  end if;
+                  if P.Kind = Record_Kind
+                    and then Carried_By (To_String (P.Type_Mark), Name)
                   then
                      return True;
                   end if;

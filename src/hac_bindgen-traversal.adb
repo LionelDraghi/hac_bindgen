@@ -119,8 +119,19 @@ package body Hac_Bindgen.Traversal is
    --  of its subtype chain.
 
    function Boundary_Diagnosis (Ref : M.Type_Reference) return Diagnosis is
+      Mark : constant String := To_String (Ref.Source_Name);
    begin
-      if SU.To_String (Ref.Source_Name) = "System.Address" then
+      --  A class-wide type mark never crosses the boundary, even when
+      --  its root is handleable: the profile would need dispatching.
+      if Mark'Length > 6
+        and then Mark (Mark'Last - 5 .. Mark'Last) = "'Class"
+      then
+         return Diagnose
+           (Private_Tagged_Id,
+            "the tool does not own object representation");
+      end if;
+
+      if Mark = "System.Address" then
          return Diagnose
            (Address_Id,
             "unchecked address conversions have no defined VM semantics");
@@ -167,6 +178,12 @@ package body Hac_Bindgen.Traversal is
          when M.Tagged_Type
             | M.Private_Type
          =>
+            --  A private partial view (not limited, not abstract)
+            --  crosses as an integer handle ([A004]); the rest keeps
+            --  the object-representation warning.
+            if Ref.Subtype_Chain.Last_Element.Handleable then
+               return No_Diagnosis;
+            end if;
             return Diagnose
               (Private_Tagged_Id,
                "the tool does not own object representation");

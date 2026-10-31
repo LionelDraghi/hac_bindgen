@@ -35,12 +35,16 @@ package body Hac_Bindgen.Generation is
       Direct_Float,      --  To_HAC / To_Native (standard Long_Float)
       Any_Integer_Kind,  --  instantiated pair on the type mark
       Any_Float_Kind,
-      Any_Enum_Kind);    --  enumerations, including Boolean
+      Any_Enum_Kind,     --  enumerations, including Boolean
+      Handle_Kind);      --  integer handle into the adapter registry
+                         --  ([A004])
 
    type Bound_Parameter is record
-      Name      : Unbounded_String;
-      Type_Mark : Unbounded_String;  --  as written in the source
-      Kind      : Conversion_Kind;
+      Name        : Unbounded_String;
+      Type_Mark   : Unbounded_String;  --  as written in the source
+      Kind        : Conversion_Kind;
+      Handle_Root : Unbounded_String;  --  Handle_Kind: the handleable
+                                       --  root type of the mark
    end record;
 
    package Bound_Parameter_Vectors is new Ada.Containers.Vectors
@@ -52,7 +56,13 @@ package body Hac_Bindgen.Generation is
       Name        : Unbounded_String;
       Params      : Bound_Parameter_Vectors.Vector;
       Result_Mark : Unbounded_String;
+      Result_Root : Unbounded_String;
+      --  Handle_Kind result: the handleable root type ([A004]).
       Result_Kind : Conversion_Kind := No_Conversion;
+      Synthetic   : Boolean := False;
+      --  A generated Drop_<T> operation ([A004]): not part of the
+      --  API, its callback releases the registry entry instead of
+      --  calling an API subprogram.
    end record;
 
    package Bound_Subprogram_Vectors is new Ada.Containers.Vectors
@@ -68,6 +78,10 @@ package body Hac_Bindgen.Generation is
    package Mirrored_Type_Vectors is new Ada.Containers.Vectors
      (Index_Type   => Positive,
       Element_Type => Mirrored_Type);
+
+   package Name_Vectors is new Ada.Containers.Vectors
+     (Index_Type   => Positive,
+      Element_Type => Unbounded_String);
 
    type Instantiation is record
       To_HAC : Boolean;
@@ -100,6 +114,18 @@ package body Hac_Bindgen.Generation is
                     then Direct_Float else Any_Float_Kind);
          when M.Boolean_Type | M.Enumeration_Type =>
             return Any_Enum_Kind;
+         when M.Tagged_Type | M.Private_Type =>
+            --  A private partial view crosses as an integer handle
+            --  ([A004]); anything else stays a traversal warning.
+            if not Ref.Subtype_Chain.Is_Empty
+              and then Ref.Subtype_Chain.Last_Element.Handleable
+            then
+               return Handle_Kind;
+            end if;
+            raise Generation_Error with
+              "internal error: non-scalar type """ & Mark
+              & """ reached the generator; the traversal should have"
+              & " warned it out";
          when others =>
             raise Generation_Error with
               "internal error: non-scalar type """ & Mark
@@ -124,9 +150,14 @@ package body Hac_Bindgen.Generation is
         To_String (Pkg.Source_Name) & "_Native";
       Api_Name    : constant String := To_String (Pkg.Source_Name);
 
-      Bound     : Bound_Subprogram_Vectors.Vector;
-      Mirrors   : Mirrored_Type_Vectors.Vector;
-      Instanced : Instantiation_Vectors.Vector;
+      Bound        : Bound_Subprogram_Vectors.Vector;
+      Mirrors      : Mirrored_Type_Vectors.Vector;
+      Instanced    : Instantiation_Vectors.Vector;
+      Handle_Types : Name_Vectors.Vector;
+      --  The handleable root types a bound profile refers to, in
+      --  first-use order ([A004]): they drive the handle subtypes,
+      --  the Drop operations, the registry instantiations, and the
+      --  helper emission.
 
       Has_Functions : Boolean := False;
       Needs_HAT     : Boolean := False;
@@ -148,6 +179,10 @@ package body Hac_Bindgen.Generation is
             then
                if Declaration.Mirrorable then
                   return Mark;
+               elsif Declaration.Handleable then
+                  --  A handleable type crosses as the generated
+                  --  handle subtype ([A004]).
+                  return Mark & "_Handle";
                else
                   case Declaration.Declared_Kind is
                      when M.Integer_Type =>
@@ -230,13 +265,15 @@ package body Hac_Bindgen.Generation is
          Buffer : Unbounded_String;
       begin
          if Result_Mark /= "" then
-            Buffer := To_Unbounded_String ("Result : out " & Result_Mark);
+            Buffer := To_Unbounded_String
+              ("Result : out " & HAC_Mark (Result_Mark));
          end if;
          for P of Params loop
             if Length (Buffer) > 0 then
                Buffer := Buffer & "; ";
             end if;
-            Buffer := Buffer & P.Name & " : in " & P.Type_Mark;
+            Buffer := Buffer & P.Name & " : in "
+                      & HAC_Mark (To_String (P.Type_Mark));
          end loop;
          return " (" & To_String (Buffer) & ")";
       end Callback_Param_List;
@@ -278,6 +315,17 @@ package body Hac_Bindgen.Generation is
          case P.Kind is
             when Direct_Integer | Direct_Float =>
                return "To_Native (" & Call & ")";
+            when Handle_Kind =>
+               --  The registry object the handle designates,
+               --  dereferenced ([A004]); an unknown or dropped handle
+               --  raises the registry's Unknown_Handle, which
+               --  propagates to HAC ([S007]). The qualified
+               --  Integer'(...) resolves To_Native's Integer
+               --  overload, which the conversion context alone
+               --  leaves ambiguous.
+               return To_String (P.Handle_Root) & "_Handles.From_Handle ("
+                 & To_String (P.Handle_Root) & "_Handles.Handle (Integer'("
+                 & "To_Native (" & Call & ")))).all";
             when others =>
                return "To_Native_" & To_String (P.Type_Mark)
                  & " (" & Call & ")";
@@ -285,7 +333,8 @@ package body Hac_Bindgen.Generation is
       end Read_Expression;
 
       --  The expression converting one native value to its HAC
-      --  representation.
+      --  representation. For Handle_Kind, Mark is the handleable root
+      --  type name, not the source mark.
       function Write_Expression
         (Kind  : Conversion_Kind;
          Mark  : String;
@@ -295,6 +344,9 @@ package body Hac_Bindgen.Generation is
          case Kind is
             when Direct_Integer | Direct_Float =>
                return "To_HAC (" & Value & ")";
+            when Handle_Kind =>
+               return "To_HAC (Integer (" & Mark
+                 & "_Handles.To_Handle (" & Value & ")))";
             when others =>
                return "To_HAC_" & Mark & " (" & Value & ")";
          end case;
@@ -350,6 +402,27 @@ package body Hac_Bindgen.Generation is
 
       procedure Collect_Bound is
          Index : Positive := 1;
+
+         --  Record a handleable root type in first-use order.
+         procedure Add_Handle_Type (Root : String) is
+         begin
+            for Existing of Handle_Types loop
+               if To_String (Existing) = Root then
+                  return;
+               end if;
+            end loop;
+            Handle_Types.Append (To_Unbounded_String (Root));
+         end Add_Handle_Type;
+
+         --  The handleable root of a type reference, for Handle_Kind.
+         function Root_Of (Ref : M.Type_Reference) return String is
+         begin
+            if Ref.Subtype_Chain.Is_Empty then
+               return "";
+            end if;
+            return To_String (Ref.Subtype_Chain.Last_Element.Source_Name);
+         end Root_Of;
+
       begin
          for Declaration of Pkg.Declarations loop
             declare
@@ -368,27 +441,69 @@ package body Hac_Bindgen.Generation is
                         Name        => Declaration.Source_Name,
                         Params      => <>,
                         Result_Mark => <>,
-                        Result_Kind => No_Conversion);
+                        Result_Root => <>,
+                        Result_Kind => No_Conversion,
+                        Synthetic   => False);
                   begin
                      for P of Declaration.Parameters loop
                         S.Params.Append
                           (Bound_Parameter'
-                             (Name      => P.Source_Name,
-                              Type_Mark => P.Parameter_Type.Source_Name,
-                              Kind      =>
-                                Conversion_Of (P.Parameter_Type)));
+                             (Name        => P.Source_Name,
+                              Type_Mark   => P.Parameter_Type.Source_Name,
+                              Kind        => Conversion_Of (P.Parameter_Type),
+                              Handle_Root =>
+                                (if Conversion_Of (P.Parameter_Type)
+                                       = Handle_Kind
+                                 then To_Unbounded_String
+                                        (Root_Of (P.Parameter_Type))
+                                 else SU.Null_Unbounded_String)));
+                        if S.Params.Last_Element.Kind = Handle_Kind then
+                           Add_Handle_Type (Root_Of (P.Parameter_Type));
+                        end if;
                      end loop;
                      if S.Is_Function then
                         S.Result_Mark :=
                           Declaration.Result_Type.Source_Name;
                         S.Result_Kind :=
                           Conversion_Of (Declaration.Result_Type);
+                        if S.Result_Kind = Handle_Kind then
+                           S.Result_Root :=
+                             To_Unbounded_String
+                               (Root_Of (Declaration.Result_Type));
+                           Add_Handle_Type (Root_Of (Declaration.Result_Type));
+                        end if;
                      end if;
                      Bound.Append (S);
                   end;
                end if;
             end;
             Index := Index + 1;
+         end loop;
+
+         --  One generated Drop_<T> per handleable type, after the API
+         --  operations ([A004]): the explicit-ownership operation
+         --  that releases the registry entry.
+         for T of Handle_Types loop
+            declare
+               Drop_Op : Bound_Subprogram :=
+                 (Is_Function => False,
+                  Name        =>
+                    To_Unbounded_String ("Drop_" & To_String (T)),
+                  Params      => <>,
+                  Result_Mark => <>,
+                  Result_Root => <>,
+                  Result_Kind => No_Conversion,
+                  Synthetic   => True);
+            begin
+               Drop_Op.Params.Append
+                 (Bound_Parameter'
+                    (Name        => To_Unbounded_String ("W"),
+                     Type_Mark   => To_Unbounded_String
+                                      (To_String (T) & "_Handle"),
+                     Kind        => Handle_Kind,
+                     Handle_Root => T));
+               Bound.Append (Drop_Op);
+            end;
          end loop;
 
          for S of Bound loop
@@ -414,30 +529,60 @@ package body Hac_Bindgen.Generation is
       --  order.
 
       procedure Collect_Mirrors is
+
+         --  Does a bound profile refer to the declaration, directly
+         --  by its mark or through a handle root ([A004])?
+         function Referenced_By_Bound (Name : String) return Boolean is
+         begin
+            for S of Bound loop
+               for P of S.Params loop
+                  if To_String (P.Type_Mark) = Name
+                    or else To_String (P.Handle_Root) = Name
+                  then
+                     return True;
+                  end if;
+               end loop;
+               if S.Is_Function
+                 and then (To_String (S.Result_Mark) = Name
+                             or else To_String (S.Result_Root) = Name)
+               then
+                  return True;
+               end if;
+            end loop;
+            return False;
+         end Referenced_By_Bound;
+
+         --  The generated handle subtype of a handleable type
+         --  ([A004]): the mirror is "is Integer".
+         procedure Collect_Handle_Subtypes is
+         begin
+            for Declaration of Pkg.Declarations loop
+               if Declaration.Kind = M.Type_Declaration
+                 and then Declaration.Handleable
+                 and then Referenced_By_Bound
+                            (To_String (Declaration.Source_Name))
+               then
+                  Mirrors.Append
+                    (Mirrored_Type'
+                       (Is_Subtype => True,
+                        Name       => To_Unbounded_String
+                                        (To_String (Declaration.Source_Name)
+                                         & "_Handle"),
+                        Mirror     => To_Unbounded_String ("is Integer")));
+               end if;
+            end loop;
+         end Collect_Handle_Subtypes;
+
       begin
          for Declaration of Pkg.Declarations loop
             if Declaration.Kind = M.Type_Declaration
               and then Declaration.Mirrorable
             then
                declare
-                  Referenced : Boolean := False;
+                  Referenced : constant Boolean :=
+                    Referenced_By_Bound
+                      (To_String (Declaration.Source_Name));
                begin
-                  for S of Bound loop
-                     for P of S.Params loop
-                        if To_String (P.Type_Mark)
-                             = To_String (Declaration.Source_Name)
-                        then
-                           Referenced := True;
-                        end if;
-                     end loop;
-                     if S.Is_Function
-                       and then To_String (S.Result_Mark)
-                                  = To_String (Declaration.Source_Name)
-                     then
-                        Referenced := True;
-                     end if;
-                  end loop;
-
                   if Referenced then
                      Mirrors.Append
                        (Mirrored_Type'
@@ -454,6 +599,8 @@ package body Hac_Bindgen.Generation is
                end;
             end if;
          end loop;
+
+         Collect_Handle_Subtypes;
       end Collect_Mirrors;
 
       ---------------------------------------------------------------
@@ -678,9 +825,30 @@ package body Hac_Bindgen.Generation is
          --  No "with HAC_Sys.Builder": the spec already carries it.
          TIO.Put_Line
            (File, "with HAC_Sys.Interfacing; use HAC_Sys.Interfacing;");
+         if not Handle_Types.Is_Empty then
+            TIO.Put_Line (File, "with Hac_Bindgen_Handles;");
+         end if;
          TIO.Put_Line (File, "with " & Api_Name & ";");
          TIO.New_Line (File);
          TIO.Put_Line (File, "package body " & Native_Name & " is");
+
+         if not Handle_Types.Is_Empty then
+            TIO.New_Line (File);
+            TIO.Put_Line
+              (File,
+               "   --  Handle registries, one per handleable type");
+            TIO.Put_Line (File, "   --  ([A004]).");
+            for T of Handle_Types loop
+               TIO.Put_Line
+                 (File,
+                  "   package " & To_String (T) & "_Handles"
+                  & " is new Hac_Bindgen_Handles");
+               TIO.Put_Line
+                 (File,
+                  "     (" & Api_Name & "." & To_String (T)
+                  & ", """ & To_String (T) & """);");
+            end loop;
+         end if;
 
          if not Instanced.Is_Empty then
             TIO.New_Line (File);
@@ -707,38 +875,64 @@ package body Hac_Bindgen.Generation is
                "   procedure " & To_String (S.Name)
                & "_Callback (Data : in out HAC_Element_Array) is");
             TIO.Put_Line (File, "   begin");
-            declare
-               Call  : Unbounded_String :=
-                 Api_Name & "." & S.Name & " (";
-               First : Boolean := True;
-               --  A function writes its result into slot 1; the
-               --  arguments follow ([A002], callback layout).
-               Slot  : Positive := (if S.Is_Function then 2 else 1);
-            begin
-               for P of S.Params loop
-                  if not First then
-                     Call := Call & ", ";
-                  end if;
-                  First := False;
-                  Call := Call & To_String (P.Name) & " => "
-                          & Read_Expression (P, Slot);
-                  Slot := Slot + 1;
-               end loop;
-               Call := Call & ")";
 
-               if S.Is_Function then
+            if S.Synthetic then
+               --  The generated Drop_<T> ([A004]): release the
+               --  registry entry; a later use of the handle is the
+               --  Unknown_Handle boundary error.
+               declare
+                  Root : constant String :=
+                    To_String (S.Params.First_Element.Handle_Root);
+               begin
                   TIO.Put_Line
                     (File,
-                     "      Data (1) := "
-                     & Write_Expression
-                         (S.Result_Kind,
-                          To_String (S.Result_Mark),
-                          To_String (Call))
-                     & ";");
-               else
-                  TIO.Put_Line (File, "      " & To_String (Call) & ";");
-               end if;
-            end;
+                     "      " & Root & "_Handles.Drop ("
+                     & Root & "_Handles.Handle (Integer'"
+                     & "(To_Native (Data (1)))));");
+               end;
+
+            else
+               declare
+                  --  A parameterless operation is called without
+                  --  parentheses: GNAT rejects the empty actual
+                  --  parameter part ([A004], Make_Widget pattern).
+                  Call  : Unbounded_String := Api_Name & "." & S.Name;
+                  First : Boolean := True;
+                  --  A function writes its result into slot 1; the
+                  --  arguments follow ([A002], callback layout).
+                  Slot  : Positive := (if S.Is_Function then 2 else 1);
+               begin
+                  for P of S.Params loop
+                     if First then
+                        Call := Call & " (";
+                     else
+                        Call := Call & ", ";
+                     end if;
+                     First := False;
+                     Call := Call & To_String (P.Name) & " => "
+                             & Read_Expression (P, Slot);
+                     Slot := Slot + 1;
+                  end loop;
+                  if not First then
+                     Call := Call & ")";
+                  end if;
+
+                  if S.Is_Function then
+                     TIO.Put_Line
+                       (File,
+                        "      Data (1) := "
+                        & Write_Expression
+                            (S.Result_Kind,
+                             (if S.Result_Kind = Handle_Kind
+                              then To_String (S.Result_Root)
+                              else To_String (S.Result_Mark)),
+                             To_String (Call))
+                        & ";");
+                  else
+                     TIO.Put_Line (File, "      " & To_String (Call) & ";");
+                  end if;
+               end;
+            end if;
             TIO.Put_Line
               (File,
                "   end " & To_String (S.Name) & "_Callback;");
@@ -764,10 +958,123 @@ package body Hac_Bindgen.Generation is
          TIO.Close (File);
       end Emit_Native_Body;
 
+      --  The registry helper ([A004]): emitted once per run, when at
+      --  least one handleable type is bound; self-contained, withing
+      --  nothing but standard library units.
+      procedure Emit_Helper is
+         File : TIO.File_Type;
+      begin
+         if Handle_Types.Is_Empty then
+            return;
+         end if;
+
+         Create (File, GNAT_File_Naming ("Hac_Bindgen_Handles") & ".ads");
+         Put_Header (File);
+         TIO.Put_Line
+           (File,
+            "--  The handle registry generic ([A004]): one instance");
+         TIO.Put_Line
+           (File,
+            "--  per handleable type, in the generated native adapter.");
+         TIO.New_Line (File);
+         TIO.Put_Line (File, "generic");
+         TIO.Put_Line (File, "   type Native_Type (<>) is private;");
+         TIO.Put_Line (File, "   Debug_Name : String := """";");
+         TIO.Put_Line (File, "package Hac_Bindgen_Handles is");
+         TIO.New_Line (File);
+         TIO.Put_Line
+           (File, "   type Handle is new Integer range 1 .. Integer'Last;");
+         TIO.Put_Line (File, "   Unknown_Handle : exception;");
+         TIO.New_Line (File);
+         TIO.Put_Line (File, "   type Native_Access is access Native_Type;");
+         TIO.New_Line (File);
+         TIO.Put_Line (File, "   function To_Handle (V : Native_Type) return Handle;");
+         TIO.Put_Line (File, "   --  Copy V into the registry, return its fresh handle.");
+         TIO.New_Line (File);
+         TIO.Put_Line
+           (File, "   function From_Handle (H : Handle) return Native_Access;");
+         TIO.Put_Line (File, "   --  The registry object designated by H; raises");
+         TIO.Put_Line (File, "   --  Unknown_Handle with message ""unknown <Debug_Name>""");
+         TIO.Put_Line (File, "   --  handle <N>"" when H is not a live entry.");
+         TIO.New_Line (File);
+         TIO.Put_Line (File, "   procedure Drop (H : Handle);");
+         TIO.Put_Line (File, "   --  Deallocate the registry object and remove the entry;");
+         TIO.Put_Line (File, "   --  a later From_Handle of H raises Unknown_Handle.");
+         TIO.New_Line (File);
+         TIO.Put_Line (File, "end Hac_Bindgen_Handles;");
+         TIO.Close (File);
+
+         Create (File, GNAT_File_Naming ("Hac_Bindgen_Handles") & ".adb");
+         Put_Header (File);
+         TIO.Put_Line (File, "with Ada.Containers.Vectors;");
+         TIO.Put_Line (File, "with Ada.Unchecked_Deallocation;");
+         TIO.New_Line (File);
+         TIO.Put_Line (File, "package body Hac_Bindgen_Handles is");
+         TIO.New_Line (File);
+         TIO.Put_Line
+           (File,
+            "   package Registries is new Ada.Containers.Vectors");
+         TIO.Put_Line
+           (File,
+            "     (Index_Type => Handle, Element_Type => Native_Access);");
+         TIO.New_Line (File);
+         TIO.Put_Line (File, "   Registry : Registries.Vector;");
+         TIO.New_Line (File);
+         TIO.Put_Line (File, "   procedure Free is new Ada.Unchecked_Deallocation");
+         TIO.Put_Line (File, "     (Native_Type, Native_Access);");
+         TIO.New_Line (File);
+         TIO.Put_Line (File, "   --  The trimmed image of a handle: no leading blank.");
+         TIO.Put_Line (File, "   function Image (H : Handle) return String is");
+         TIO.Put_Line (File, "      S : constant String := Handle'Image (H);");
+         TIO.Put_Line (File, "   begin");
+         TIO.Put_Line (File, "      return S (S'First + 1 .. S'Last);");
+         TIO.Put_Line (File, "   end Image;");
+         TIO.New_Line (File);
+         TIO.Put_Line (File, "   function To_Handle (V : Native_Type) return Handle is");
+         TIO.Put_Line (File, "   begin");
+         TIO.Put_Line (File, "      Registry.Append (new Native_Type'(V));");
+         TIO.Put_Line (File, "      return Registry.Last_Index;");
+         TIO.Put_Line (File, "   end To_Handle;");
+         TIO.New_Line (File);
+         TIO.Put_Line (File, "   function From_Handle (H : Handle) return Native_Access is");
+         TIO.Put_Line (File, "   begin");
+         TIO.Put_Line (File, "      if H <= Registry.Last_Index");
+         TIO.Put_Line (File, "        and then Registry.Element (H) /= null");
+         TIO.Put_Line (File, "      then");
+         TIO.Put_Line (File, "         return Registry.Element (H);");
+         TIO.Put_Line (File, "      end if;");
+         TIO.Put_Line (File, "      raise Unknown_Handle");
+         TIO.Put_Line (File, "        with ""unknown "" & Debug_Name & "" handle """);
+         TIO.Put_Line (File, "             & Image (H);");
+         TIO.Put_Line (File, "   end From_Handle;");
+         TIO.New_Line (File);
+         TIO.Put_Line (File, "   procedure Drop (H : Handle) is");
+         TIO.Put_Line (File, "   begin");
+         TIO.Put_Line (File, "      if H <= Registry.Last_Index");
+         TIO.Put_Line (File, "        and then Registry.Element (H) /= null");
+         TIO.Put_Line (File, "      then");
+         TIO.Put_Line (File, "         declare");
+         TIO.Put_Line (File, "            P : Native_Access := Registry.Element (H);");
+         TIO.Put_Line (File, "         begin");
+         TIO.Put_Line (File, "            Free (P);");
+         TIO.Put_Line (File, "            Registry.Replace_Element (H, null);");
+         TIO.Put_Line (File, "         end;");
+         TIO.Put_Line (File, "         return;");
+         TIO.Put_Line (File, "      end if;");
+         TIO.Put_Line (File, "      raise Unknown_Handle");
+         TIO.Put_Line (File, "        with ""unknown "" & Debug_Name & "" handle """);
+         TIO.Put_Line (File, "             & Image (H);");
+         TIO.Put_Line (File, "   end Drop;");
+         TIO.New_Line (File);
+         TIO.Put_Line (File, "end Hac_Bindgen_Handles;");
+         TIO.Close (File);
+      end Emit_Helper;
+
    begin
       Collect_Bound;
       Collect_Mirrors;
       Collect_Instantiations;
+      Emit_Helper;
       Emit_Hac_Spec;
       Emit_Hac_Body;
       Emit_Native_Spec;

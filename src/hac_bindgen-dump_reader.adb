@@ -35,6 +35,9 @@ package body Hac_Bindgen.Dump_Reader is
       --  Type_Entity: the entity own category.
       Has_Character_Literals : Boolean := False;
       --  Enumeration entities: some literal is a character literal.
+      Handleable : Boolean := False;
+      --  Type_Entity: a private partial view crossed as an integer
+      --  handle ([A004]).
       Base_Name : SU.Unbounded_String;
       Base_Ref  : SU.Unbounded_String;
       --  Subtype_Entity: the base type mark and its resolved identity.
@@ -347,7 +350,8 @@ package body Hac_Bindgen.Dump_Reader is
                     (Source_Name    => SU.To_Unbounded_String (Name),
                      Canonical_Name => SU.To_Unbounded_String (Ref),
                      Kind           => Kind,
-                     Has_Character_Literals => False));
+                     Has_Character_Literals => False,
+                     Handleable     => False));
                Result.Known       := True;
                Result.Has_Unknown := False;
                return Result;
@@ -369,7 +373,8 @@ package body Hac_Bindgen.Dump_Reader is
                           (Source_Name    => SU.To_Unbounded_String (Fallback_Name),
                            Canonical_Name => SU.To_Unbounded_String (Ref),
                            Kind           => M.Unknown_Type,
-                           Has_Character_Literals => False));
+                           Has_Character_Literals => False,
+                           Handleable     => False));
                      Result.Known       := False;
                      Result.Has_Unknown := True;
                      return Result;
@@ -400,7 +405,12 @@ package body Hac_Bindgen.Dump_Reader is
                                 and then not Sub.Chain.Is_Empty
                               then Sub.Chain.Last_Element
                                      .Has_Character_Literals
-                              else E.Has_Character_Literals));
+                              else E.Has_Character_Literals),
+                           Handleable =>
+                             (if E.Kind = Subtype_Entity
+                                and then not Sub.Chain.Is_Empty
+                              then Sub.Chain.Last_Element.Handleable
+                              else E.Handleable));
 
                  Result.Chain.Append (Self);
                  Result.Chain.Append (Sub.Chain);
@@ -472,6 +482,7 @@ package body Hac_Bindgen.Dump_Reader is
                            Location => Location, Parameters => <>,
                            Declared_Kind => M.Unknown_Type,
                            Is_Subtype => False,
+                           Handleable => False,
                            Mirrorable => False,
                            Mirror_Text => SU.Null_Unbounded_String);
             when M.Object_Declaration =>
@@ -558,6 +569,52 @@ package body Hac_Bindgen.Dump_Reader is
             return M.Other_Type;
          end if;
       end Kind_Of_Definition;
+
+      --  A private partial view crossed as an integer handle ([A004]):
+      --  the definition spelling ends in "private" and does not say
+      --  "limited" or "abstract" — both block the initialized
+      --  allocator / the copy the registry needs. The spelling, not
+      --  the kind, is the authority: "tagged private" and "new Base
+      --  with private" are handleable while Kind loses the details.
+      function Is_Handleable_Definition
+        (Definition : String) return Boolean
+      is
+         Rest : constant String := Definition;
+      begin
+         if Starts_With (Rest, "abstract ") then
+            return False;
+         end if;
+
+         declare
+            First : Positive := Rest'First;
+         begin
+            while First <= Rest'Last
+              and then Rest (First) = ' '
+            loop
+               First := First + 1;
+            end loop;
+
+            if Rest'Last - First + 1 < 7
+              or else Rest (Rest'Last - 6 .. Rest'Last) /= "private"
+            then
+               return False;
+            end if;
+
+            --  Any "limited" word, including in "tagged limited
+            --  private", blocks handleability.
+            for I in First .. Rest'Last - 6 loop
+               if Rest (I .. I + 6) = "limited"
+                 and then (I = First
+                             or else Rest (I - 1) = ' ')
+                 and then (I + 7 > Rest'Last
+                             or else Rest (I + 7) = ' ')
+               then
+                  return False;
+               end if;
+            end loop;
+         end;
+         return True;
+      end Is_Handleable_Definition;
 
       --  The definition text of a type line: the tokens after
       --  "definition", joined by single spaces.
@@ -700,6 +757,7 @@ package body Hac_Bindgen.Dump_Reader is
                 Kind      => Subtype_Entity,
                 Own_Kind  => M.Unknown_Type,
                 Has_Character_Literals => False,
+                Handleable => False,
                 Base_Name => SU.To_Unbounded_String (Tok (Tokens, 6)),
                 Base_Ref  => SU.To_Unbounded_String (Tok (Tokens, 8))));
 
@@ -732,6 +790,7 @@ package body Hac_Bindgen.Dump_Reader is
                    Kind      => Type_Entity,
                    Own_Kind  => M.Enumeration_Type,
                    Has_Character_Literals => Has_Char_Literals,
+                   Handleable => False,
                    Base_Name => SU.Null_Unbounded_String,
                    Base_Ref  => SU.Null_Unbounded_String));
             end;
@@ -744,12 +803,15 @@ package body Hac_Bindgen.Dump_Reader is
             declare
                Kind : constant M.Type_Kind :=
                  Kind_Of_Definition (Definition_Of (Tokens, 6));
+               Handleable : constant Boolean :=
+                 Is_Handleable_Definition (Definition_Of (Tokens, 6));
             begin
                Start_Declaration
                  (Name     => Tok (Tokens, 2),
                   Location => To_Location (Tok (Tokens, 4), Line_No),
                   New_Kind => M.Type_Declaration);
                Pending.Declared_Kind := Kind;
+               Pending.Handleable := Handleable;
                Pending.Mirror_Text :=
                  SU.To_Unbounded_String
                    ("is " & Definition_Of (Tokens, 6));
@@ -760,6 +822,7 @@ package body Hac_Bindgen.Dump_Reader is
                    Kind      => Type_Entity,
                    Own_Kind  => Kind,
                    Has_Character_Literals => False,
+                   Handleable => Handleable,
                    Base_Name => SU.Null_Unbounded_String,
                    Base_Ref  => SU.Null_Unbounded_String));
             end;

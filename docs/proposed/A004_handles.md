@@ -373,7 +373,7 @@ main. All scenarios run from `tests/`.
 - Then there is a file `run/hac_bindgen_handles.ads`
 - And there is a file `run/hac_bindgen_handles.adb`
 - And the file `run/hac_widget_api.ads` contains `subtype Widget_Handle is Integer;`
-- And the file `run/hac_widget_api.ads` contains `procedure Drop_Widget (W : in Widget_Handle);`
+- And the file `run/hac_widget_api.ads` contains `procedure Drop_Widget (W : in Widget_Handle) with Import => True;`
 - And the file `run/widget_api_native.adb` contains `new Hac_Bindgen_Handles`
 - And the output contains `3 operations bound, 0 not bound`
 

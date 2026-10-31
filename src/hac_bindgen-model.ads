@@ -50,6 +50,9 @@ package Hac_Bindgen.Model is
       --  An enumeration whose literals include character literals
       --  ('0', 'A', ...): HAC cannot parse such a declaration, so it
       --  is not mirrorable ([A005], HACB0017).
+      Handleable     : Boolean := False;
+      --  A private partial view (not limited, not abstract) crossed
+      --  as an integer handle ([A004], HACB0004 narrowed).
    end record;
 
    package Type_Identity_Vectors is new Ada.Containers.Vectors
@@ -103,6 +106,11 @@ package Hac_Bindgen.Model is
          when Type_Declaration =>
             Declared_Kind : Type_Kind := Unknown_Type;
             Is_Subtype    : Boolean := False;
+            Handleable    : Boolean := False;
+            --  A private partial view (definition spelling ending in
+            --  "private", without "limited" or "abstract") crossed as
+            --  an integer handle: not mirrorable (HAC has no private
+            --  type), but bindable ([A004]).
             --  True when the generator can mirror the declaration on
             --  the HAC side: enumerations, and subtypes of known
             --  category with a statically known constraint. HAC

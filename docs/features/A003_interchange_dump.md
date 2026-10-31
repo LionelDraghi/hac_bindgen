@@ -14,6 +14,7 @@ Libadalang.
 - [Executable scenarios](#executable-scenarios)
   - [Scenario: dump identifies itself](#scenario-dump-identifies-itself)
   - [Scenario: subprogram profiles with explicit modes](#scenario-subprogram-profiles-with-explicit-modes)
+  - [Scenario: a parameterless subprogram is dumped like any other](#scenario-a-parameterless-subprogram-is-dumped-like-any-other)
   - [Scenario: type references resolve to their declaration](#scenario-type-references-resolve-to-their-declaration)
   - [Scenario: enumeration literals in declaration order](#scenario-enumeration-literals-in-declaration-order)
   - [Scenario: static values are evaluated](#scenario-static-values-are-evaluated)
@@ -172,6 +173,33 @@ its expected dump.
       returns Integer resolved standard.Integer
   end Probe_Fixture
   ```
+
+### Scenario: a parameterless subprogram is dumped like any other
+
+A subprogram declared without a parameter list has no `Subp_Params`
+node at all in the parse tree; this scenario guards the former crash
+(`Precondition_Failure` on a null node, truncated dump) and pins the
+expected dump. Parameter lines are optional in the grammar.
+
+- Given the new file `probe_fixture.ads` containing
+  ```ada
+  package Probe_Fixture is
+    procedure Reset;
+    function Answer return Integer;
+  end Probe_Fixture;
+  ```
+- When I successfully run `../tools/libadalang_backend/bin/hac_bindgen_backend probe_fixture.ads`
+- Then the output is
+  ```text
+  hac-bindgen-backend 0.1.0-dev format 1
+  package Probe_Fixture loc probe_fixture.ads:1:11
+  public
+    procedure Reset loc probe_fixture.ads:2:15
+    function Answer loc probe_fixture.ads:3:14
+      returns Integer resolved standard.Integer
+  end Probe_Fixture
+  ```
+- And there is no error output
 
 ### Scenario: type references resolve to their declaration
 

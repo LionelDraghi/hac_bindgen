@@ -203,16 +203,20 @@ procedure Hac_Bindgen_Backend is
                Put_Line ("  function " & Name & " loc " & Loc);
             end if;
 
-            for Param of LAL.F_Params (LAL.F_Subp_Params (Spec)) loop
-               for DN of LAL.F_Ids (Param) loop
-                  Put_Line
-                    ("    param " & Txt (DN) & " loc " & Loc_Of (DN)
-                     & " mode " & Mode_Image (LAL.F_Mode (Param))
-                     & " type " & Txt (LAL.F_Type_Expr (Param))
-                     & " resolved "
-                     & Type_Identity (LAL.F_Type_Expr (Param)));
+            --  A subprogram declared without a parameter list has no
+            --  Subp_Params node at all; F_Params would reject it.
+            if not LAL.F_Subp_Params (Spec).Is_Null then
+               for Param of LAL.F_Params (LAL.F_Subp_Params (Spec)) loop
+                  for DN of LAL.F_Ids (Param) loop
+                     Put_Line
+                       ("    param " & Txt (DN) & " loc " & Loc_Of (DN)
+                        & " mode " & Mode_Image (LAL.F_Mode (Param))
+                        & " type " & Txt (LAL.F_Type_Expr (Param))
+                        & " resolved "
+                        & Type_Identity (LAL.F_Type_Expr (Param)));
+                  end loop;
                end loop;
-            end loop;
+            end if;
 
             if not LAL.F_Subp_Returns (Spec).Is_Null then
                Put_Line

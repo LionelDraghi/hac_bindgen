@@ -86,14 +86,13 @@ is generated end to end.
 Targeted use case: generate the TopoScript bindings of
 [topoproof](https://github.com/LionelDraghi/topoproof)'s geometry
 domains (`tools/topocli`), whose script-facing operations exchange
-records (`Point_3D`, `Vector_3D`) — all warned out today
-([HACB0005]).
+records (`Point_3D`, `Vector_3D`) — bound since [A009].
 
-- [ ] Record boundary values ([HACB0005] narrowed): a record type is
+- [x] Record boundary values ([HACB0005] narrowed): a record type is
       mirrored HAC-side and marshalled component-wise into consecutive
       `Data` slots, the `Size_of` layout of the M2 evidence computed
       recursively for nested records
-- [ ] Record copy-back: `out` / `in out` record parameters written
+- [x] Record copy-back: `out` / `in out` record parameters written
       back like scalars, the native subtype checks applying on the way
       back
 - [ ] First real-world binding: the TopoScript geometry domain of

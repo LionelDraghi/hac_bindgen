@@ -1,10 +1,14 @@
 # A009 — Record boundary values <!-- omit from toc -->
 
-Status: Proposed
-Source: roadmap M7 (composite boundary values, targeted use case:
-the topoproof TopoScript API); the HAC record marshalling was
-verified by execution of the HAC 0.45.0 interpreter (probe of
-2026-10-31, see Specification).
+Real APIs exchange structured values: points, vectors, configuration
+records. hac-bindgen used to warn every record boundary value out
+([HACB0005]) — although the HAC VM layout for it is documented in the
+M2 evidence: composite values occupy their `Size_of` number of
+consecutive `Data` elements. This page owns the record mapping: a
+record type whose components are all bindable scalars is bound,
+mirrored HAC-side, and marshalled component-wise. The targeted use
+case is topoproof's TopoScript API, whose operations exchange `Point_3D`
+and `Vector_3D` records.
 
 ## Contents <!-- omit from toc -->
 
@@ -18,17 +22,13 @@ verified by execution of the HAC 0.45.0 interpreter (probe of
 - [Verification beyond bbt](#verification-beyond-bbt)
 - [Design implications](#design-implications)
 - [Open questions](#open-questions)
-- [Finalization target](#finalization-target)
 
 ## Need
 
-Real APIs exchange structured values: points, vectors, configuration
-records. hac-bindgen warns every record boundary value out
-([HACB0005]) — the composite marshalling does not exist, although the
-HAC VM layout for it is documented in the M2 evidence: composite
-values occupy their `Size_of` number of consecutive `Data` elements.
-The targeted use case is topoproof's TopoScript API, whose operations
-exchange `Point_3D` and `Vector_3D` records.
+Without the record mapping, every operation of such an API is warned
+out wholesale: one record parameter condemns the whole subprogram,
+although the VM exchanges the values correctly — the composite
+marshalling was the only missing piece, not a HAC limitation.
 
 ## Intended outcome
 
@@ -63,7 +63,7 @@ component keep a warning.
   component's size is not statically known; not bound.
 - Records with a handleable (private) component: the handle is an
   Integer and would work mechanically, but the ownership rules of
-  [A004] must be thought through first; deferred.
+  [A004](A004_handles.md) must be thought through first; deferred.
 - A record result from an imported *function*: HAC functions' results
   are atomic types only (HAC source, `Size_of` of a function result
   is currently 1); the record result crosses through the
@@ -87,8 +87,8 @@ The HAC VM copies, for every imported parameter, `Size_of (parameter)`
 stack cells into consecutive `Data` slots (M2 evidence). For a record
 type, `Size_of` is the block's variable size — the components' cells
 in declaration order, nested records flattened recursively (HAC
-source: `Size_of` returns `VSize` for records; verified by execution
-today: a script passes two `Point` records to an imported procedure,
+source: `Size_of` returns `VSize` for records; verified by execution:
+a script passes two `Point` records to an imported procedure,
 the native callback reads each component cell and writes the `out`
 record cells back, and the script sees the summed components —
 `make witness` verifies it permanently).
@@ -110,7 +110,8 @@ The backend dump gains one component line per record component —
 `component <name> <type mark> resolved <canonical>` — an optional
 line inside the existing type declaration block; the dump grammar
 grows without a format bump, the reader accepting the new optional
-line ([A003] precedent: parameter lines, constraint line).
+line ([A003](A003_interchange_dump.md) precedent: parameter lines,
+constraint line).
 
 [HACB0005] keeps warning: array roots, discriminated records, records
 with a component that is not itself bound (array, access, VString
@@ -119,7 +120,7 @@ component...). The reason names the offending component.
 ## Executable scenarios
 
 The end-to-end scenarios use the harness of
-[A002](../features/A002_facade_generation.md); all scenarios run from
+[A002](A002_facade_generation.md); all scenarios run from
 `tests/`.
 
 | Scenario | Behavior |
@@ -291,10 +292,3 @@ format grows by an optional line, not a format bump.
   scenarios for the other scalar kinds.
 - Should the dump carry component default expressions? No consumer
   needs them (same reasoning as [HACB0009]); not carried.
-
-## Finalization target
-
-A new `docs/features/A009_records.md`; the [HACB0005] narrowing joins
-[B001](B001_non_bindable_constructs.md); the M2 evidence notes gain
-the record marshalling line; the roadmap M7 items are checked at the
-same Finalize.

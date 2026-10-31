@@ -57,7 +57,7 @@ stable key: it never changes meaning.
 | HACB0002 | operator symbol (`"+"`, ...) | not a valid callback name |
 | HACB0003 | access type or access parameter | no pointer representation across the VM boundary |
 | HACB0004 | limited, interface, class-wide or abstract type as boundary value | the tool does not own object representation ([A004](A004_handles.md): private and tagged private types are handles) |
-| HACB0005 | record, discriminated record or array as boundary value | composite mapping deferred; explicit profile first ([A006](A006_strings.md): `String` itself is a copy, not a composite warning) |
+| HACB0005 | non-bindable composite as boundary value: array, discriminated or shapeless record, record with a non-bindable component | composite mapping exists only for flat records of bindable scalars ([A009](A009_records.md)); arrays and the other shapes are deferred ([A006](A006_strings.md): `String` itself is a copy, not a composite warning) |
 | HACB0006 | task or protected object | no VM representation |
 | HACB0007 | generic package or subprogram | instantiate natively, bind the instance |
 | HACB0008 | `out` / `in out` parameter of a function, or `out` of a handleable type or of `String` | HAC functions have in-only parameters; a fresh `out` handleable value cannot be default-constructed; a string container is by-reference, the callee cannot size it ([A002](A002_facade_generation.md#copy-back), [A006](A006_strings.md)) |
@@ -104,8 +104,13 @@ stable key: it never changes meaning.
   (not limited, not abstract) is bound as a handle
   ([A004](A004_handles.md)); string roots are bound as copies
   ([A006](A006_strings.md)), except a constrained string subtype,
-  which warns `HACB0018`; access roots warn `HACB0003`; array and
-  record roots warn `HACB0005`; tagged and other private
+  which warns `HACB0018`; access roots warn `HACB0003`;
+  array roots warn `HACB0005`; a record root is bound when its
+  declaration carries a flat component list and every component,
+  recursively, is a bindable scalar ([A009](A009_records.md)), and
+  warns `HACB0005` otherwise — no flat component list, or a component
+  that is not itself bound, the reason naming the offending
+  component; tagged and other private
   roots warn `HACB0004`; fixed-point
   and modular roots warn `HACB0010`; task and protected roots warn
   `HACB0006`; a type the analyser cannot resolve to a known category

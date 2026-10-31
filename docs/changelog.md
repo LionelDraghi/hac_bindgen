@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and the version numbering on [Semantic Versioning](https://semver.org/).
 
 - **[0.1.1-dev] - ????-??-??**
+  - [Added] record types with a flat list of bindable scalar components cross the boundary component-wise, with copy-back for `out` and `in out` record parameters, and a warning naming the offending component when a record is not bound
 
 - **[0.1.0] - 2026-10-31**
   - [Added] `hac-bindgen generate` produces the scripting facade of a package specification: the native adapter (callbacks, conversions, registration) and the HAC-side declarations, from the bound part of the API, with `--output-dir` and `--hac-package` to fit the project layout

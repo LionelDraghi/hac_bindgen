@@ -80,6 +80,9 @@ native exception.
   result slot;
 - direct and generic integer, float, string, Boolean, and enumeration
   conversions, including `in out` copy-back;
+- record marshalling: a record parameter exchanges its components in
+  consecutive `Data` cells, and an `out` record copies back
+  ([A009](../features/A009_records.md));
 - multiple builds and executions using the same `Build_Data`.
 
 The observable paths needed for generation in M4 are established.

@@ -435,6 +435,34 @@ package body Hac_Bindgen.Generation is
          end case;
       end Write_Expression;
 
+      --  The expression reading one record component from its Data
+      --  slot ([A009]): direct conversions share To_Native, the
+      --  generic any-kind conversions are instantiated per type
+      --  mark.
+      function Cell_Read
+        (Kind : Conversion_Kind;
+         Mark : String;
+         Slot : Positive) return String
+      is
+      begin
+         case Kind is
+            when Direct_Integer | Direct_Float | Direct_String =>
+               return "To_Native (Data (" & Image (Slot) & "))";
+            when others =>
+               return "To_Native_" & Mark & " (Data ("
+                 & Image (Slot) & "))";
+         end case;
+      end Cell_Read;
+
+      --  The number of Data cells a bound parameter occupies ([A009]):
+      --  a record carries its whole flat component layout, any other
+      --  kind one cell. The traversal guarantees a bound record at
+      --  least one component.
+      function Cell_Count (P : Bound_Parameter) return Positive is
+        (if P.Kind = Record_Kind
+         then Positive (P.Cells.Length)
+         else 1);
+
       ---------------------------------------------------------------
       --  File output
 
@@ -822,6 +850,32 @@ package body Hac_Bindgen.Generation is
                            Kind   => P.Kind,
                            Mark   => To_String (P.Type_Mark));
                      end if;
+                  when Record_Kind =>
+                     --  A component converts through its own type mark
+                     --  ([A009]), in the directions the parameter's
+                     --  mode requires.
+                     for C of P.Cells loop
+                        case C.Kind is
+                           when Any_Integer_Kind
+                             | Any_Float_Kind
+                             | Any_Enum_Kind
+                           =>
+                              if P.Mode /= M.Out_Mode then
+                                 Add
+                                   (To_HAC => False,
+                                    Kind   => C.Kind,
+                                    Mark   => To_String (C.Type_Mark));
+                              end if;
+                              if P.Mode /= M.In_Mode then
+                                 Add
+                                   (To_HAC => True,
+                                    Kind   => C.Kind,
+                                    Mark   => To_String (C.Type_Mark));
+                              end if;
+                           when others =>
+                              null;
+                        end case;
+                     end loop;
                   when others =>
                      null;
                end case;
@@ -1063,28 +1117,42 @@ package body Hac_Bindgen.Generation is
 
                         if P.Kind = Record_Kind then
                            --  Component-wise marshalling ([A009]): the
-                           --  local carries the record, each component
-                           --  reads its own Data slot, and every
-                           --  component is written back after the
-                           --  call.
+                           --  local carries the record, each in / in
+                           --  out component reads its own Data slot,
+                           --  and every out / in out component is
+                           --  written back after the call. The cell
+                           --  paths already start at the parameter
+                           --  name.
                            Call := Call & Name;
+                           Locals := Locals
+                             & "      " & Name & " : "
+                             & Native_Type_Of (Mark)
+                             & ";" & ASCII.LF;
                            for C of P.Cells loop
                               declare
                                  N : constant Positive :=
                                    Slot + C.Offset - 1;
                               begin
-                                 Reads := Reads
-                                   & "      " & Name & "."
-                                   & To_String (C.Path)
-                                   & " := To_Native (Data ("
-                                   & Image (N) & "));" & ASCII.LF;
-                                 Writes := Writes
-                                   & "      Data (" & Image (N) & ") := "
-                                   & Write_Expression
-                                       (C.Kind,
-                                        To_String (C.Type_Mark),
-                                        Name & "." & To_String (C.Path))
-                                   & ";" & ASCII.LF;
+                                 if P.Mode /= M.Out_Mode then
+                                    Reads := Reads
+                                      & "      "
+                                      & To_String (C.Path)
+                                      & " := "
+                                      & Cell_Read
+                                          (C.Kind,
+                                           To_String (C.Type_Mark),
+                                           N)
+                                      & ";" & ASCII.LF;
+                                 end if;
+                                 if P.Mode /= M.In_Mode then
+                                    Writes := Writes
+                                      & "      Data (" & Image (N) & ") := "
+                                      & Write_Expression
+                                          (C.Kind,
+                                           To_String (C.Type_Mark),
+                                           To_String (C.Path))
+                                      & ";" & ASCII.LF;
+                                 end if;
                               end;
                            end loop;
                         elsif P.Mode /= M.In_Mode
@@ -1107,7 +1175,7 @@ package body Hac_Bindgen.Generation is
                                    & Read_Expression (P, Slot);
                         end if;
                      end;
-                     Slot := Slot + 1;
+                     Slot := Slot + Cell_Count (P);
                   end loop;
                   if not First then
                      Call := Call & ")";

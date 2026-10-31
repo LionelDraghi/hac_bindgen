@@ -9,6 +9,7 @@ the details remain in the authoritative source.
 | P3 | Upstream the `libgpr2` GNAT 16 port once stabilized, so Libadalang can eventually link into the main crate | Design | [design_discussions.md](design_discussions.md#analysis-backend-evaluation) | Open |
 | P3 | `Hac_Bindgen.Model` does not carry format-1 facts that no consumer needs yet: the static values of object declarations (objects are not bound), default parameter expressions (HACB0009 stays undetectable); type categories, unhandled kind names, and the type-declaration mirror texts (literals, constraints) are carried since the B001 traversal and the A002 generation; add the rest when M6 consumers need them | Design | [design_discussions.md](design_discussions.md#interchange-format-between-backend-and-main-crate) | Open |
 | P2 | The `with Import => True` declaration mechanism in a package specification is unverified | Design | [hac_interfacing_notes.md](hac_interfacing_notes.md) | Open |
+| P3 | The generated callback of a parameterless bound operation never references its `Data` formal: GNAT warns `formal parameter "Data" is not referenced`, which is an error under `-gnatwe` (found by the A007 e2e harness; a `pragma Unreferenced` or equivalent is the likely fix) | Quality | [A002 callback layout](../features/A002_facade_generation.md#callback-layout) | Open |
 | P3 | Boolean has no direct `To_HAC` overload: mapping route (generic enum vs Integer) to be tested and fixed | Design | [hac_interfacing_notes.md](hac_interfacing_notes.md) | Open |
 
 Closed:

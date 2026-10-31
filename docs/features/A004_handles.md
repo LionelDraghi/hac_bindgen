@@ -128,6 +128,7 @@ main. All scenarios run from `tests/`.
 | A004-02 | an unknown handle is a defined boundary error |
 | A004-03 | the generated files carry the handle machinery |
 | A004-04 | classification of private, tagged, limited and class-wide types |
+| A004-05 | an in out handle parameter is modified in place (copy-back) |
 
 ### Scenario: a script creates, uses and drops an opaque object
 
@@ -339,6 +340,70 @@ main. All scenarios run from `tests/`.
 - And the output contains `warning HACB0005`
 - And the output contains `1 operation bound, 3 not bound (see warnings)`
 - And the output does not contain `Op1`
+
+### Scenario: an in out handle parameter is modified in place
+
+The copy-back of [A002] composes with the reference semantics: the
+registry object is passed in place, and the unchanged handle value is
+copied back.
+
+- Given the new directory `run`
+- Given the new file `run/widget_api.ads` containing
+  ```ada
+  package Widget_Api is
+     type Widget is tagged private;
+     function Make_Widget return Widget;
+     procedure Age (W : in out Widget);
+     procedure Draw (W : in Widget);
+  private
+     type Widget is tagged record
+        Id : Integer;
+     end record;
+  end Widget_Api;
+  ```
+- Given the new file `run/widget_api.adb` containing
+  ```ada
+  with Ada.Text_IO;
+  package body Widget_Api is
+     function Make_Widget return Widget is
+        (Id => 1);
+     procedure Age (W : in out Widget) is
+     begin
+        W := (Id => W.Id * 10);
+        Ada.Text_IO.Put_Line ("native: aged widget");
+     end Age;
+     procedure Draw (W : in Widget) is
+     begin
+        Ada.Text_IO.Put_Line ("native: draw widget"
+                              & Integer'Image (W.Id));
+     end Draw;
+  end Widget_Api;
+  ```
+- When I successfully run `../bin/hac-bindgen generate run/widget_api.ads --output-dir run --hac-package HAC_Widget_Api`
+- Then the output contains `3 operations bound, 0 not bound`
+- Given the new file `run/witness_binding.ads` containing
+  ```ada
+  with Widget_Api_Native;
+  package Witness_Binding renames Widget_Api_Native;
+  ```
+- Given the new file `run/widget_script.adb` containing
+  ```ada
+  with HAC_Widget_Api;
+  procedure Widget_Script is
+     W : HAC_Widget_Api.Widget_Handle := HAC_Widget_Api.Make_Widget;
+  begin
+     HAC_Widget_Api.Age (W);
+     HAC_Widget_Api.Draw (W);
+  end Widget_Script;
+  ```
+- When I successfully run shell `alr exec -- gprbuild -q -P e2e/witness.gpr`
+- When I successfully run `./run/witness_main run/widget_script.adb`
+- Then I get
+  ```text
+  native: aged widget
+  native: draw widget 10
+  E2E: script completed.
+  ```
 
 ## Verification beyond bbt
 

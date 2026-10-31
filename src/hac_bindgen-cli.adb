@@ -5,7 +5,9 @@
 --  SPDX-FileCopyrightText: 2026, Lionel Draghi
 -- -----------------------------------------------------------------------------
 
+with Ada.Characters.Handling;
 with Ada.Command_Line;
+with Ada.Containers.Vectors;
 with Ada.Directories;
 with Ada.Exceptions;
 with Ada.Strings.Unbounded;
@@ -17,12 +19,19 @@ with Hac_Bindgen.Traversal;
 
 package body Hac_Bindgen.CLI is
 
-   package CL  renames Ada.Command_Line;
-   package Dir renames Ada.Directories;
-   package SU  renames Ada.Strings.Unbounded;
-   package TIO renames Ada.Text_IO;
+   package CL    renames Ada.Command_Line;
+   package Dir   renames Ada.Directories;
+   package Hand  renames Ada.Characters.Handling;
+   package SU    renames Ada.Strings.Unbounded;
+   package TIO   renames Ada.Text_IO;
+
+   use Hac_Bindgen.Model;
 
    use type Dir.File_Kind;
+
+   package Model_Vectors is new Ada.Containers.Vectors
+     (Index_Type   => Positive,
+      Element_Type => Model.Package_Model);
 
    Run_Error : exception;
 
@@ -154,48 +163,143 @@ package body Hac_Bindgen.CLI is
                      Fail ("cannot read '" & Arg & "'");
                   end if;
 
-                  begin
-                     if Command = "check" then
-                        Analysis.Check (Arg);
-                     else
-                        declare
-                           The_Model : constant Model.Package_Model :=
-                             Analysis.Analyze (Arg);
-                           The_Result : constant Model.Analysis_Result :=
-                             Traversal.Classify (The_Model);
-                        begin
-                           Traversal.Report (The_Model, The_Result);
-                           Generation.Generate
-                             (The_Model,
-                              The_Result,
-                              To_String (Hac_Package),
-                              To_String (Output_Dir));
-                        end;
-                     end if;
-                  exception
-                     when Error : Analysis.Analysis_Error
-                                | Generation.Generation_Error =>
-                        Fail (Ada.Exceptions.Exception_Message (Error),
-                              With_Usage => False);
-                  end;
+                  Analysis.Check (Arg);
+               exception
+                  when Error : Analysis.Analysis_Error =>
+                     Fail (Ada.Exceptions.Exception_Message (Error),
+                           With_Usage => False);
                end Process_Source;
+
+               function Source_Count return Natural is
+                  Count       : Natural := 0;
+                  Source_List : constant String := To_String (Sources);
+               begin
+                  --  Sources are space-joined with one trailing space;
+                  --  one space per source.
+                  for I in Source_List'Range loop
+                     if Source_List (I) = ' ' then
+                        Count := Count + 1;
+                     end if;
+                  end loop;
+                  return Count;
+               end Source_Count;
 
                procedure Process_All_Sources is
                   Source_List : constant String := To_String (Sources);
                   First : Positive := Source_List'First;
-               begin
-                  for I in Source_List'Range loop
-                     if Source_List (I) = ' ' then
-                        if I > First then
-                           Process_Source (Source_List (First .. I - 1));
+
+                  Models : Model_Vectors.Vector;
+
+                  procedure Analyze_All is
+                     --  Every source is analyzed before anything is
+                     --  generated, so that a bad input or a duplicate
+                     --  package name ([A007]) leaves no file behind.
+                  begin
+                     for I in Source_List'Range loop
+                        if Source_List (I) = ' ' and then I > First then
+                           declare
+                              Arg : constant String :=
+                                Source_List (First .. I - 1);
+                           begin
+                              if not File_Exists (Arg) then
+                                 Fail ("cannot read '" & Arg & "'");
+                              end if;
+
+                              begin
+                                 Models.Append (Analysis.Analyze (Arg));
+                              exception
+                                 when Error : Analysis.Analysis_Error =>
+                                    Fail (Ada.Exceptions.Exception_Message
+                                            (Error),
+                                          With_Usage => False);
+                              end;
+                              First := I + 1;
+                           end;
                         end if;
-                        First := I + 1;
-                     end if;
-                  end loop;
+                     end loop;
+                  end Analyze_All;
+
+                  procedure Reject_Duplicate_Package_Names is
+                     --  Two sources declaring the same package name
+                     --  would generate two identical HAC-side units:
+                     --  the second overwrites the first, one binding
+                     --  silently lost ([A007]). Ada names are
+                     --  case-insensitive.
+                  begin
+                     for I in Models.First_Index .. Models.Last_Index - 1
+                     loop
+                        for J in I + 1 .. Models.Last_Index loop
+                           if Hand.To_Lower
+                                (SU.To_String (Models (I).Canonical_Name))
+                              = Hand.To_Lower
+                                  (SU.To_String (Models (J).Canonical_Name))
+                           then
+                              Fail
+                                ("duplicate package name '"
+                                 & SU.To_String
+                                     (Models (J).Canonical_Name)
+                                 & "' in '"
+                                 & SU.To_String (Models (J).Source_Name)
+                                 & "'",
+                                 With_Usage => False);
+                           end if;
+                        end loop;
+                     end loop;
+                  end Reject_Duplicate_Package_Names;
+
+                  procedure Generate_All is
+                  begin
+                     for M of Models loop
+                        declare
+                           The_Result : constant Model.Analysis_Result :=
+                             Traversal.Classify (M);
+                        begin
+                           Traversal.Report (M, The_Result);
+                           Generation.Generate
+                             (M,
+                              The_Result,
+                              To_String (Hac_Package),
+                              To_String (Output_Dir));
+                        exception
+                           when Error : Generation.Generation_Error =>
+                              Fail (Ada.Exceptions.Exception_Message
+                                      (Error),
+                                    With_Usage => False);
+                        end;
+                     end loop;
+                  end Generate_All;
+
+               begin
+                  if Command = "check" then
+                     for I in Source_List'Range loop
+                        if Source_List (I) = ' ' then
+                           if I > First then
+                              Process_Source (Source_List (First .. I - 1));
+                           end if;
+                           First := I + 1;
+                        end if;
+                     end loop;
+                  else
+                     Analyze_All;
+                     Reject_Duplicate_Package_Names;
+                     Generate_All;
+                  end if;
                end Process_All_Sources;
 
             begin
                Parse_Arguments;
+
+               --  [A007]: --hac-package renames the HAC-side package
+               --  of one API; on several sources it would rename every
+               --  package identically, one binding silently shadowing
+               --  the other: rejected.
+               if Command = "generate"
+                 and then Hac_Package /= Null_Unbounded_String
+                 and then Source_Count > 1
+               then
+                  Fail ("option '--hac-package' applies to a single source");
+               end if;
+
                Process_All_Sources;
             end;
 

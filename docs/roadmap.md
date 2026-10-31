@@ -76,10 +76,10 @@ is generated end to end.
 - [x] Strings end to end, copy both ways ([A006])
 - [x] `out`/`in out` copy-back ([A002-06], [HACB0008] narrowed to
       functions and `out` of a handleable type)
-- [ ] Several bound packages registering into one HAC environment
-      (name collisions included)
-- [ ] Repeated script execution in the same witness application,
-      if the HAC VM supports it
+- [x] Several bound packages registering into one HAC environment
+      (name collisions included) ([A007])
+- [x] Repeated script execution in the same witness application,
+      if the HAC VM supports it ([A008]; supported)
 
 ## Gadgets (later, on demand)
 

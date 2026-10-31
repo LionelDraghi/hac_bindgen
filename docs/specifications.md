@@ -202,6 +202,7 @@ Executable features (`features/`):
 | A004 | Handle profile: opaque objects across the boundary | [A004_handles.md](features/A004_handles.md) | implemented |
 | A005 | Rich enumerations at the boundary | [A005_enumerations.md](features/A005_enumerations.md) | implemented |
 | A006 | Strings end to end: copy both ways | [A006_strings.md](features/A006_strings.md) | implemented |
+| A007 | Several bound packages in one HAC environment | [A007_several_packages.md](features/A007_several_packages.md) | implemented |
 | B001 | Non-bindable constructs: warnings | [B001_non_bindable_constructs.md](features/B001_non_bindable_constructs.md) | partially implemented |
 | C001 | Usage and input errors | [C001_usage_errors.md](features/C001_usage_errors.md) | implemented |
 
@@ -211,7 +212,7 @@ Proposed features ([`proposed/`](proposed/), specified, not executable):
 |---|---|---|
 | C002 | Runtime boundary errors | [C002_boundary_errors.md](proposed/C002_boundary_errors.md) |
 
-Next free identifiers: `A007`, `B002`, `C003`.
+Next free identifiers: `A008`, `B002`, `C003`.
 
 ## 4. Cross-reference table
 

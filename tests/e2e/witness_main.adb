@@ -15,11 +15,12 @@
 --  HAC resolves the script's withed units there, next to the
 --  generated HAC-side files.
 --
---  Exit status: 0 when the script ran without VM error, 1 otherwise.
+--  Exit status: 0 when every script ran without VM error, 1 otherwise.
 -- -----------------------------------------------------------------------------
 
 with Ada.Command_Line;
 with Ada.Directories;
+with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with HAC_Sys.Builder;
 with HAC_Sys.PCode.Interpreter;
@@ -46,37 +47,58 @@ procedure Witness_Main is
    procedure Print_Trace is new Show_Trace_Back (Print_Trace_Line);
 
 begin
-   if Ada.Command_Line.Argument_Count /= 1 then
-      Put_Line (Current_Error, "usage: witness_main SCRIPT");
+   if Ada.Command_Line.Argument_Count = 0 then
+      Put_Line (Current_Error, "usage: witness_main SCRIPT...");
       Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
       return;
    end if;
 
+   Witness_Binding.Register_All (BD);
+
+   --  Resolve every script to an absolute path before the first
+   --  Set_Directory: a relative argument would otherwise be resolved
+   --  against the previous script's directory ([A008]).
    declare
-      Script      : constant String := Ada.Command_Line.Argument (1);
-      Post_Mortem : Post_Mortem_Data;
+      use Ada.Strings.Unbounded;
+
+      Count : constant Positive := Ada.Command_Line.Argument_Count;
+
+      type Script_List is array (1 .. Count) of Unbounded_String;
+
+      Scripts : Script_List;
    begin
-      Ada.Directories.Set_Directory
-        (Ada.Directories.Containing_Directory (Script));
+      for A in Scripts'Range loop
+         Scripts (A) := To_Unbounded_String
+           (Ada.Directories.Full_Name (Ada.Command_Line.Argument (A)));
+      end loop;
 
-      Witness_Binding.Register_All (BD);
+      for A in Scripts'Range loop
+         declare
+            Script      : constant String := To_String (Scripts (A));
+            Post_Mortem : Post_Mortem_Data;
+         begin
+            Ada.Directories.Set_Directory
+              (Ada.Directories.Containing_Directory (Script));
 
-      BD.Build_Main_from_File (Ada.Directories.Simple_Name (Script));
-      if not BD.Build_Successful then
-         Put_Line (Current_Error, "HAC failed to build " & Script);
-         Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
-         return;
-      end if;
+            BD.Build_Main_from_File (Ada.Directories.Simple_Name (Script));
+            if not BD.Build_Successful then
+               Put_Line (Current_Error, "HAC failed to build " & Script);
+               Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
+               return;
+            end if;
 
-      Interpret_on_Current_IO (BD, 0, Script, Post_Mortem);
-      if Is_Exception_Raised (Post_Mortem.Unhandled) then
-         Put_Line
-           (Current_Error,
-            "HAC VM exception: " & Message (Post_Mortem.Unhandled));
-         Print_Trace (Post_Mortem.Unhandled);
-         Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
-      else
-         Put_Line ("E2E: script completed.");
-      end if;
+            Interpret_on_Current_IO (BD, 0, Script, Post_Mortem);
+            if Is_Exception_Raised (Post_Mortem.Unhandled) then
+               Put_Line
+                 (Current_Error,
+                  "HAC VM exception: " & Message (Post_Mortem.Unhandled));
+               Print_Trace (Post_Mortem.Unhandled);
+               Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Failure);
+               return;
+            else
+               Put_Line ("E2E: script completed.");
+            end if;
+         end;
+      end loop;
    end;
 end Witness_Main;

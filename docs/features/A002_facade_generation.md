@@ -2,13 +2,13 @@
 
 The core feature: hac-bindgen generates the scripting facade from the
 supplied API ([S006], [S009]). This page covers the first profile:
-one package, procedures and functions with `in` parameters, and the
-scalar types HAC supports natively. Wider traits (handles,
-enumerations, strings) get their own `Annn` page when their mapping is
-demonstrated end to end.
+one package, procedures and functions with `in` parameters and
+copy-back of `out` / `in out` scalar parameters, and the scalar types
+HAC supports natively. Wider traits (handles, enumerations, strings)
+get their own `Annn` page when their mapping is demonstrated end to
+end: [A004](A004_handles.md), [A005](A005_enumerations.md).
 
-Out of scope, by design: `out` / `in out` parameters and copy-back
-(M6, [A002-06]), strings and `VString` boundaries (M6), handles (M6),
+Out of scope, by design: strings and `VString` boundaries (M6),
 several bound packages in one run (M6), the binding manifest and the
 `--native-package` and `--manifest` options (gadgets). The generated
 callbacks let every exception propagate to HAC's error mechanism
@@ -28,6 +28,7 @@ documented in the M2 evidence.
 
 - [Generated file set](#generated-file-set)
 - [Callback layout](#callback-layout)
+- [Copy-back](#copy-back)
 - [HAC-side declarations](#hac-side-declarations)
 - [Command behavior](#command-behavior)
 - [End-to-end test harness](#end-to-end-test-harness)
@@ -36,6 +37,7 @@ documented in the M2 evidence.
   - [Scenario: scalar round trips](#scenario-scalar-round-trips)
   - [Scenario: user-defined scalars round trips](#scenario-user-defined-scalars-round-trips)
   - [Scenario: a bound function is a real HAC function](#scenario-a-bound-function-is-a-real-hac-function)
+  - [Scenario: a procedure writes results back to the script](#scenario-a-procedure-writes-results-back-to-the-script)
   - [Scenario: the generated files cover the bound part only](#scenario-the-generated-files-cover-the-bound-part-only)
   - [Scenario: two runs produce byte-identical files](#scenario-two-runs-produce-byte-identical-files)
   - [Scenario: every generated file carries the version header](#scenario-every-generated-file-carries-the-version-header)
@@ -117,6 +119,35 @@ Per the M2 evidence (`docs/dev/hac_interfacing_notes.md`):
   the qualified name of the HAC-side declaration, uppercased;
   `Register_All` registers every bound operation of the package.
 
+## Copy-back
+
+The M2 evidence pins the HAC mechanics: `in` and `in out` arguments
+are copied into the callback array before the call, `out` elements
+are not populated, and HAC copies `out` and `in out` values back
+after the callback returns ([A002-06]). The generated callback uses
+it this way:
+
+- The slot layout is unchanged: one slot per parameter, declaration
+  order, function result in slot 1 ([A004] adds the handle rules).
+- `in`: read-only, as the rest of the layout describes.
+- `in out` of a scalar type: the argument is read into a native local
+  before the call, and the local is converted back into its slot
+  after the call — through the same conversion instantiation as the
+  read, so the native subtype check applies on the way back too
+  ([S003]).
+- `out` of a scalar type: a native local is declared (never read),
+  passed to the native operation, and converted into its slot after
+  the call; a direction is instantiated only when it is actually
+  used.
+- `in out` of a handleable type ([A004]): the registry object is
+  passed in place — reference semantics — and the unchanged handle
+  value is copied back; no re-handle, no copy.
+- Refused shapes keep [HACB0008], at the parameter's own location
+  ([B001], scenario B001-08): an `out` / `in out` parameter of a
+  function (HAC functions have in-only parameters), and an `out`
+  parameter of a handleable type (the callback cannot
+  default-construct the native object).
+
 ## HAC-side declarations
 
 - Each bound procedure is declared as a procedure with
@@ -169,8 +200,9 @@ per-scenario generated names with a one-line package renaming:
 
 - `tests/e2e/witness_main.adb` is static and never changes: it
   prepares the HAC environment, calls
-  `Witness_Binding.Register_All`, compiles and runs the script given
-  as argument, and reports completion. It `with`s only
+  `Witness_Binding.Register_All`, then builds and runs each script
+  given as argument in the same HAC environment
+  ([A008]), reporting completion per script. It `with`s only
   `Witness_Binding`.
 - Each end-to-end scenario writes, in its fresh directory: the API
   fixture under its own name (the naming is exercised with arbitrary
@@ -204,11 +236,17 @@ run from `tests/`.
 | A002-03 | user-defined scalars: range type, enumeration, subtype round trips |
 | A002-04 | a bound function is a real HAC function for the script |
 | A002-05 | the generated files cover the bound part only |
+| A002-06 | copy-back: a procedure writes results back to the script |
 | A002-07 | two runs produce byte-identical files |
 | A002-08 | every generated file carries the version header |
 
-A002-06 (copy-back), strings, handles and multi-package scenarios are
-M6 work and get their own scenarios then.
+The other copy-back scenarios belong to the pages that own their
+behavior: the in-out-handle round trip is [A004-05]
+([A004](A004_handles.md)), and the refused shapes are [B001-08]
+([B001](B001_non_bindable_constructs.md)). Strings, multi-package and
+repeated-execution scenarios have their own pages since:
+[A006](A006_strings.md), [A007](A007_several_packages.md),
+[A008](A008_repeated_execution.md).
 
 ### Scenario: a script calls a bound procedure end to end
 
@@ -396,6 +434,76 @@ M6 work and get their own scenarios then.
 - When I successfully run `./run/witness_main run/func_script.adb`
 - Then I get
   ```text
+  E2E: script completed.
+  ```
+
+### Scenario: a procedure writes results back to the script
+
+- Given the new directory `run`
+- Given the new file `run/count_api.ads` containing
+  ```ada
+  package Count_Api is
+     type Level is range 0 .. 100;
+     type Light is (Red, Amber, Green);
+     procedure Bump (X : in out Level);
+     procedure Reset (X : out Level);
+     procedure Paint (L : out Light);
+  end Count_Api;
+  ```
+- Given the new file `run/count_api.adb` containing
+  ```ada
+  with Ada.Text_IO;
+  package body Count_Api is
+     procedure Bump (X : in out Level) is
+     begin
+        X := X + 1;
+        Ada.Text_IO.Put_Line ("native: bumped to"
+                              & Level'Image (X));
+     end Bump;
+     procedure Reset (X : out Level) is
+     begin
+        X := 0;
+     end Reset;
+     procedure Paint (L : out Light) is
+     begin
+        L := Green;
+     end Paint;
+  end Count_Api;
+  ```
+- When I successfully run `../bin/hac-bindgen generate run/count_api.ads --output-dir run --hac-package HAC_Count_Api`
+- Then the output contains `3 operations bound, 0 not bound`
+- And the file `run/hac_count_api.ads` contains `procedure Bump (X : in out Integer) with Import => True;`
+- Given the new file `run/witness_binding.ads` containing
+  ```ada
+  with Count_Api_Native;
+  package Witness_Binding renames Count_Api_Native;
+  ```
+- Given the new file `run/count_script.adb` containing
+  ```ada
+  with HAC_Count_Api;
+  with HAT;
+  procedure Count_Script is
+     N : Integer := 40;
+     L : HAC_Count_Api.Light;
+  begin
+     HAC_Count_Api.Bump (N);
+     HAC_Count_Api.Reset (N);
+     if N = 0 then
+        HAT.Put_Line ("script: reset ok");
+     end if;
+     HAC_Count_Api.Paint (L);
+     if L = HAC_Count_Api.Green then
+        HAT.Put_Line ("script: paint ok");
+     end if;
+  end Count_Script;
+  ```
+- When I successfully run shell `alr exec -- gprbuild -q -P e2e/witness.gpr`
+- When I successfully run `./run/witness_main run/count_script.adb`
+- Then I get
+  ```text
+  native: bumped to 41
+  script: reset ok
+  script: paint ok
   E2E: script completed.
   ```
 

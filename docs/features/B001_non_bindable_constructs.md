@@ -224,9 +224,8 @@ pinning each side show the same warning and summary formats.
 - And there is no error output
 - And I get
   ```text
-  shape_probe.ads:6:22: warning HACB0005: parameter P is not bound: composite mapping is deferred to a later profile
   shape_probe.ads:7:24: warning HACB0004: parameter H is not bound: the tool does not own object representation
-  Shape_Probe: 0 operations bound, 2 not bound (see warnings)
+  Shape_Probe: 1 operation bound, 1 not bound (see warnings)
   ```
 
 ### Scenario: nothing is silently dropped

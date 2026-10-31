@@ -337,9 +337,9 @@ main. All scenarios run from `tests/`.
 - When I successfully run `../bin/hac-bindgen check run/mixed_api.ads`
 - Then the exit code is `0`
 - And the output contains `warning HACB0004`
-- And the output contains `warning HACB0005`
-- And the output contains `1 operation bound, 3 not bound (see warnings)`
+- And the output contains `2 operations bound, 2 not bound (see warnings)`
 - And the output does not contain `Op1`
+- And the output does not contain `HACB0005`
 
 ### Scenario: an in out handle parameter is modified in place
 

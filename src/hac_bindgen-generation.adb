@@ -39,8 +39,27 @@ package body Hac_Bindgen.Generation is
       Any_Integer_Kind,  --  instantiated pair on the type mark
       Any_Float_Kind,
       Any_Enum_Kind,     --  enumerations, including Boolean
-      Handle_Kind);      --  integer handle into the adapter registry
+      Handle_Kind,       --  integer handle into the adapter registry
                          --  ([A004])
+      Record_Kind);      --  component-wise marshalling of a bound
+                         --  record type ([A009])
+
+   --  One marshalled cell of a record parameter ([A009]): the
+   --  component's path from the parameter ("P.X", nested:
+   --  "P.Origin.X"), its type mark (for the conversion), its
+   --  conversion kind, and its slot offset, relative to the
+   --  parameter's first slot — the HAC VM copies Size_of consecutive
+   --  cells, components in declaration order.
+   type Component_Cell is record
+      Path      : Unbounded_String;
+      Type_Mark : Unbounded_String;
+      Kind      : Conversion_Kind;
+      Offset    : Positive;
+   end record;
+
+   package Component_Cell_Vectors is new Ada.Containers.Vectors
+     (Index_Type   => Positive,
+      Element_Type => Component_Cell);
 
    type Bound_Parameter is record
       Name        : Unbounded_String;
@@ -49,6 +68,9 @@ package body Hac_Bindgen.Generation is
       Kind        : Conversion_Kind;
       Handle_Root : Unbounded_String;  --  Handle_Kind: the handleable
                                        --  root type of the mark
+      Cells       : Component_Cell_Vectors.Vector;  --  Record_Kind: the
+                                                    --  flat component
+                                                    --  layout ([A009])
    end record;
 
    package Bound_Parameter_Vectors is new Ada.Containers.Vectors
@@ -122,6 +144,11 @@ package body Hac_Bindgen.Generation is
             --  A string crosses as a copy, both ways ([A006]): the
             --  direct String overloads of To_HAC / To_Native.
             return Direct_String;
+         when M.Record_Type =>
+            --  A record crosses component-wise ([A009]): the traversal
+            --  guarantees the record's declaration carries a flat
+            --  component list of bindable scalars.
+            return Record_Kind;
          when M.Tagged_Type | M.Private_Type =>
             --  A private partial view crosses as an integer handle
             --  ([A004]); anything else stays a traversal warning.
@@ -470,6 +497,61 @@ package body Hac_Bindgen.Generation is
             Handle_Types.Append (To_Unbounded_String (Root));
          end Add_Handle_Type;
 
+         --  The record type declaration a mark refers to. The
+         --  traversal guarantees the lookup succeeds: it only binds a
+         --  record whose declaration it classified in this package.
+         function Find_Record (Mark : String) return M.Public_Declaration is
+         begin
+            for Declaration of Pkg.Declarations loop
+               if Declaration.Kind = M.Type_Declaration
+                 and then To_String (Declaration.Source_Name) = Mark
+               then
+                  return Declaration;
+               end if;
+            end loop;
+            raise Generation_Error with
+              "internal error: record type """ & Mark
+              & """ not found in the model; the traversal should have"
+              & " warned it out";
+         end Find_Record;
+
+         --  The flat cell layout of one record value ([A009]): one
+         --  cell per scalar component, nested records flattened
+         --  recursively, slots numbered from Offset.
+         procedure Flatten_Cells
+           (Prefix : String;
+            Ref    : M.Type_Reference;
+            Offset : in out Natural;
+            Cells  : in out Component_Cell_Vectors.Vector)
+         is
+            Decl : constant M.Public_Declaration :=
+              Find_Record
+                (SU.To_String (Ref.Subtype_Chain.Last_Element.Source_Name));
+         begin
+            for C of Decl.Components loop
+               declare
+                  Kind : constant Conversion_Kind :=
+                    Conversion_Of (C.Component_Type);
+               begin
+                  if Kind = Record_Kind then
+                     Flatten_Cells
+                       (Prefix & "." & To_String (C.Name),
+                        C.Component_Type, Offset, Cells);
+                  else
+                     Offset := Offset + 1;
+                     Cells.Append
+                       (Component_Cell'
+                          (Path      => To_Unbounded_String
+                                          (Prefix & "."
+                                           & To_String (C.Name)),
+                           Type_Mark => C.Component_Type.Source_Name,
+                           Kind      => Kind,
+                           Offset    => Offset));
+                  end if;
+               end;
+            end loop;
+         end Flatten_Cells;
+
          --  The handleable root of a type reference, for Handle_Kind.
          function Root_Of (Ref : M.Type_Reference) return String is
          begin
@@ -513,9 +595,31 @@ package body Hac_Bindgen.Generation is
                                        = Handle_Kind
                                  then To_Unbounded_String
                                         (Root_Of (P.Parameter_Type))
-                                 else SU.Null_Unbounded_String)));
+                                 else SU.Null_Unbounded_String),
+                              Cells       => <>));
                         if S.Params.Last_Element.Kind = Handle_Kind then
                            Add_Handle_Type (Root_Of (P.Parameter_Type));
+                        elsif S.Params.Last_Element.Kind = Record_Kind then
+                           --  The flat cell layout of the record
+                           --  ([A009]); offsets are relative to the
+                           --  parameter's first slot.
+                           declare
+                              Cells    : Component_Cell_Vectors.Vector;
+                              Offset   : Natural := 0;
+                           begin
+                              Flatten_Cells
+                                (To_String (P.Source_Name),
+                                 P.Parameter_Type, Offset, Cells);
+                              S.Params.Replace_Element
+                                (S.Params.Last_Index,
+                                 (Name        => P.Source_Name,
+                                  Type_Mark   => P.Parameter_Type.Source_Name,
+                                  Mode        => P.Mode,
+                                  Kind        => S.Params.Last_Element.Kind,
+                                  Handle_Root =>
+                                    S.Params.Last_Element.Handle_Root,
+                                  Cells       => Cells));
+                           end;
                         end if;
                      end loop;
                      if S.Is_Function then
@@ -559,7 +663,8 @@ package body Hac_Bindgen.Generation is
                                       (To_String (T) & "_Handle"),
                      Mode        => M.In_Mode,
                      Kind        => Handle_Kind,
-                     Handle_Root => T));
+                     Handle_Root => T,
+                     Cells       => <>));
                Bound.Append (Drop_Op);
             end;
          end loop;
@@ -935,8 +1040,12 @@ package body Hac_Bindgen.Generation is
                Slot  : Positive := (if S.Is_Function then 2 else 1);
                --  The out / in out scalar parameters cross through
                --  native locals ([copy-back]): declared before the
-               --  call, written back into their Data slot after.
+               --  call, written back into their Data slot after. A
+               --  record parameter ([A009]) declares the local, reads
+               --  its components as statements, and writes them back
+               --  after the call.
                Locals : Unbounded_String;
+               Reads  : Unbounded_String;
                Writes : Unbounded_String;
             begin
                if not S.Synthetic then
@@ -952,7 +1061,33 @@ package body Hac_Bindgen.Generation is
                         end if;
                         First := False;
 
-                        if P.Mode /= M.In_Mode
+                        if P.Kind = Record_Kind then
+                           --  Component-wise marshalling ([A009]): the
+                           --  local carries the record, each component
+                           --  reads its own Data slot, and every
+                           --  component is written back after the
+                           --  call.
+                           Call := Call & Name;
+                           for C of P.Cells loop
+                              declare
+                                 N : constant Positive :=
+                                   Slot + C.Offset - 1;
+                              begin
+                                 Reads := Reads
+                                   & "      " & Name & "."
+                                   & To_String (C.Path)
+                                   & " := To_Native (Data ("
+                                   & Image (N) & "));" & ASCII.LF;
+                                 Writes := Writes
+                                   & "      Data (" & Image (N) & ") := "
+                                   & Write_Expression
+                                       (C.Kind,
+                                        To_String (C.Type_Mark),
+                                        Name & "." & To_String (C.Path))
+                                   & ";" & ASCII.LF;
+                              end;
+                           end loop;
+                        elsif P.Mode /= M.In_Mode
                           and then P.Kind /= Handle_Kind
                         then
                            Call := Call & Name;
@@ -985,6 +1120,7 @@ package body Hac_Bindgen.Generation is
                   & "_Callback (Data : in out HAC_Element_Array) is");
                TIO.Put (File, To_String (Locals));
                TIO.Put_Line (File, "   begin");
+               TIO.Put (File, To_String (Reads));
 
                if S.Synthetic then
                   --  The generated Drop_<T> ([A004]): release the

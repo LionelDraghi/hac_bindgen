@@ -45,6 +45,17 @@ package body Witness_Native is
       Data (1) := To_HAC (Left + Right);
    end Sum_Callback;
 
+   --  Record marshalling probe (A009): a record parameter occupies
+   --  Size_of consecutive cells, components in declaration order.
+   --  Layout: Result (2 cells, slots 1..2), P (3..4), D (5..6).
+   procedure Translate_Callback (Data : in out HAC_Element_Array) is
+      X : constant Integer := To_Native (Data (3)) + To_Native (Data (5));
+      Y : constant Integer := To_Native (Data (4)) + To_Native (Data (6));
+   begin
+      Data (1) := To_HAC (X);
+      Data (2) := To_HAC (Y);
+   end Translate_Callback;
+
    procedure Verify_Integer (Data : in out HAC_Element_Array) is
    begin
       if To_Native (Data (1)) /= 42 then
@@ -134,6 +145,7 @@ package body Witness_Native is
       Register (BD, Say'Access, "Witness_API.Say");
       Register (BD, Secondary_Say'Access, "Witness_Secondary_API.Say");
       Register (BD, Sum_Callback'Access, "Witness_API.Sum_Callback");
+      Register (BD, Translate_Callback'Access, "Witness_API.Translate_Callback");
       Register (BD, Verify_Integer'Access, "Witness_API.Verify_Integer");
       Register (BD, Check_Values'Access, "Witness_API.Check_Values");
       Register (BD, Verify_Results'Access, "Witness_API.Verify_Results");

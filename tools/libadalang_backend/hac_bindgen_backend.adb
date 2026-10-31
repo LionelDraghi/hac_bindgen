@@ -313,6 +313,59 @@ procedure Hac_Bindgen_Backend is
                Put_Line
                  ("  type " & Name & " loc " & Loc
                   & " definition " & Flatten (Txt (Def)));
+               --  A record type carries its flat component list
+               --  ([A009]): one component line per component name, in
+               --  declaration order — the marshalling layout of the
+               --  generated callbacks. A record containing a variant
+               --  part or any non-component item keeps an incomplete
+               --  list: the reader carries no components and the
+               --  traversal warns the type out.
+               if not Def.Is_Null
+                 and then Def.Kind = LCL.Ada_Record_Type_Def
+               then
+                  declare
+                     RD  : constant LAL.Base_Record_Def'Class :=
+                       Def.As_Record_Type_Def.F_Record_Def;
+                     Items : constant LAL.Ada_Node_List :=
+                       LAL.F_Components (LAL.F_Components (RD));
+                     Flat : Boolean := True;
+                  begin
+                     --  The flat list is emitted only when it is a
+                     --  lie-proof layout: component declarations plus
+                     --  cell-free items (null component, pragmas,
+                     --  aspects), and no variant part — the variant
+                     --  part is a field of the component list, and
+                     --  its presence withholds the list entirely
+                     --  ([A009]): the reader carries no components
+                     --  and the traversal warns the type out.
+                     Flat :=
+                       LAL.F_Variant_Part (LAL.F_Components (RD)).Is_Null;
+
+                     if Flat then
+                        for Item of Items loop
+                           if Item.Kind in LCL.Ada_Component_Decl then
+                              declare
+                                 C   : constant LAL.Component_Decl :=
+                                   Item.As_Component_Decl;
+                                 CTE : constant LAL.Type_Expr :=
+                                   LAL.F_Type_Expr
+                                     (LAL.F_Component_Def (C));
+                              begin
+                                 for Id of LAL.F_Ids (C) loop
+                                    Put_Line
+                                      ("    component "
+                                       & Txt (Id) & " type " & Txt (CTE)
+                                       & " resolved "
+                                       & Type_Identity (CTE));
+                                 end loop;
+                              end;
+                           end if;
+                        end loop;
+                     else
+                        Put_Line ("    component list incomplete");
+                     end if;
+                  end;
+               end if;
             end if;
          end;
 

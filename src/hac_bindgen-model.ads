@@ -70,6 +70,15 @@ package Hac_Bindgen.Model is
       Subtype_Chain  : Type_Identity_Vectors.Vector;
    end record;
 
+   type Record_Component is record
+      Name           : Text;
+      Component_Type : Type_Reference;
+   end record;
+
+   package Record_Component_Vectors is new Ada.Containers.Vectors
+     (Index_Type   => Positive,
+      Element_Type => Record_Component);
+
    type Parameter_Mode is (In_Mode, Out_Mode, In_Out_Mode);
 
    type Parameter is record
@@ -132,6 +141,12 @@ package Hac_Bindgen.Model is
             --  constraint appears as "range (dynamic)" and blocks the
             --  exact mirroring.
             Mirror_Text   : Text;
+            Components    : Record_Component_Vectors.Vector;
+            --  The flat component list of a record type ([A009]): one
+            --  entry per component, in declaration order, each with
+            --  its resolved type. A record with a variant part, a
+            --  discriminated record, or a null record carries an
+            --  empty list: not marshalled, not bound ([HACB0005]).
          when Other_Declaration =>
             --  A declaration the analysis backend could not represent:
             --  the dump carries the parser kind name, which drives the

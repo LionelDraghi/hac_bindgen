@@ -75,7 +75,16 @@ and appear in parameter declaration order:
 ```text
     param <Name> loc <file>:<line>:<col> mode <in|in out|out> type <Type_Mark> resolved <Identity>
     returns <Type_Mark> resolved <Identity>
+    component <Name> type <Type_Mark> resolved <Identity>
+    component list incomplete
 ```
+
+The `component` lines are indented one level under their record type
+declaration, in component declaration order ([A009]): they carry the
+flat component list the generated callbacks marshal, one line per
+component name. The list is stated only when it is a flat, complete
+layout: a record with a variant part, or a null record, states no
+component line and reports `component list incomplete` instead.
 
 - `loc` designates the defining identifier — the package name, the
   declared identifier, or the parameter identifier — 1-based line and
@@ -358,6 +367,7 @@ anonymous number declaration — is reported as `unhandled` ([S006]).
   package Probe_Fixture loc probe_fixture.ads:1:11
   public
     type Rec loc probe_fixture.ads:2:11 definition record Field : Integer; end record
+      component Field type Integer resolved standard.Integer
     unhandled NumberDecl loc probe_fixture.ads:6:6
   end Probe_Fixture
   ```

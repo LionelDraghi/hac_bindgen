@@ -117,10 +117,15 @@ package body Hac_Bindgen.Traversal is
       & ":" & Trim (Loc.Column'Image));
 
    ---------------------------------------------------------------------
-   --  Classification of a type used as a boundary value, from the root
-   --  of its subtype chain.
+   --  [A009]: the record diagnosis is recursive — a record crosses
+   --  component-wise when its declaration carries a flat component
+   --  list, and every component, recursively, is a bindable scalar.
 
-   function Boundary_Diagnosis (Ref : M.Type_Reference) return Diagnosis is
+   function Record_Diagnosis
+     (Pkg : M.Package_Model; Ref : M.Type_Reference) return Diagnosis;
+
+   function Boundary_Diagnosis
+     (Pkg : M.Package_Model; Ref : M.Type_Reference) return Diagnosis is
       Mark : constant String := To_String (Ref.Source_Name);
    begin
       --  A class-wide type mark never crosses the boundary, even when
@@ -189,12 +194,13 @@ package body Hac_Bindgen.Traversal is
             end if;
             return No_Diagnosis;
 
-         when M.Array_Type
-            | M.Record_Type
-         =>
+         when M.Array_Type =>
             return Diagnose
               (Composite_Id,
                "composite mapping is deferred to a later profile");
+
+         when M.Record_Type =>
+            return Record_Diagnosis (Pkg, Ref);
 
          when M.Tagged_Type
             | M.Private_Type
@@ -229,6 +235,95 @@ package body Hac_Bindgen.Traversal is
                "the analyser cannot resolve this type to a known category");
       end case;
    end Boundary_Diagnosis;
+
+   --  [A009]: one component, recursively: a bindable scalar kind, or
+   --  a nested record that is itself bound.
+   function Component_Diagnosis
+     (Pkg : M.Package_Model; C : M.Record_Component) return Diagnosis is
+      CT : constant M.Type_Reference := C.Component_Type;
+   begin
+      if CT.Resolution = M.Unresolved
+        or else CT.Subtype_Chain.Is_Empty
+      then
+         return Diagnose
+           (Unresolved_Id,
+            "the analyser cannot resolve this type to a known category");
+      end if;
+
+      case CT.Subtype_Chain.Last_Element.Kind is
+         when M.Integer_Type
+            | M.Floating_Point_Type
+            | M.Boolean_Type
+         =>
+            return No_Diagnosis;
+
+         when M.Enumeration_Type =>
+            if CT.Subtype_Chain.Last_Element.Has_Character_Literals then
+               return Diagnose
+                 (Char_Literal_Id,
+                  "HAC only accepts identifier literals");
+            end if;
+            return No_Diagnosis;
+
+         when M.Record_Type =>
+            return Record_Diagnosis (Pkg, CT);
+
+         when M.String_Type =>
+            --  A VString component has no static cell layout: the
+            --  component's size is not known at generation time.
+            return Diagnose
+              (Composite_Id,
+               "a string component has no static cell layout");
+
+         when others =>
+            return Diagnose
+              (Composite_Id,
+               "the component is not a bindable scalar");
+      end case;
+   end Component_Diagnosis;
+
+   function Record_Diagnosis
+     (Pkg : M.Package_Model; Ref : M.Type_Reference) return Diagnosis is
+      --  The record's declaration, found by the name its subtype
+      --  chain ends at: the declaration the dump stated the component
+      --  list for. A record without a flat component list (null
+      --  record, variant part, or any layout the dump does not
+      --  carry) is not bound.
+   begin
+      for Declaration of Pkg.Declarations loop
+         if Declaration.Kind = M.Type_Declaration
+           and then SU.To_String (Declaration.Source_Name)
+                      = SU.To_String (Ref.Subtype_Chain.Last_Element.Source_Name)
+         then
+            if Declaration.Components.Is_Empty then
+               return Diagnose
+                 (Composite_Id,
+                  "the record has no flat component list "
+                  & "(null record, variant part, or unsupported shape)");
+            end if;
+
+            for C of Declaration.Components loop
+               declare
+                  D : constant Diagnosis :=
+                    Component_Diagnosis (Pkg, C);
+               begin
+                  if Has_Diagnosis (D) then
+                     return Diagnose
+                       (To_String (D.Id),
+                        "component " & SU.To_String (C.Name)
+                        & ": " & SU.To_String (D.Reason));
+                  end if;
+               end;
+            end loop;
+            return No_Diagnosis;
+         end if;
+      end loop;
+
+      return Diagnose
+        (Composite_Id,
+         "the record has no flat component list "
+         & "(null record, variant part, or unsupported shape)");
+   end Record_Diagnosis;
 
    ---------------------------------------------------------------------
    --  Classification of a declaration the backend could not represent:
@@ -318,8 +413,13 @@ package body Hac_Bindgen.Traversal is
    --  and overloads are refused at the declaration, parameters and the
    --  result at their own location. The name is recorded as seen,
    --  whether the declaration is bound or not.
+
+   --  [A009]: the record diagnosis is recursive — a record crosses
+   --  component-wise when its declaration carries a flat component
+   --  list, and every component, recursively, is a bindable scalar.
    function Classify_Subprogram
-     (Declaration : M.Public_Declaration;
+     (Pkg         : M.Package_Model;
+      Declaration : M.Public_Declaration;
       Seen_Names  : in out Name_Vectors.Vector) return Warning
    is
       Name : constant String :=
@@ -355,7 +455,7 @@ package body Hac_Bindgen.Traversal is
          for Item of Declaration.Parameters loop
             declare
                D : constant Diagnosis :=
-                 Boundary_Diagnosis (Item.Parameter_Type);
+                 Boundary_Diagnosis (Pkg, Item.Parameter_Type);
                Handleable : constant Boolean :=
                  not Item.Parameter_Type.Subtype_Chain.Is_Empty
                  and then Item.Parameter_Type.Subtype_Chain
@@ -422,7 +522,7 @@ package body Hac_Bindgen.Traversal is
          then
             declare
                D : constant Diagnosis :=
-                 Boundary_Diagnosis (Declaration.Result_Type);
+                 Boundary_Diagnosis (Pkg, Declaration.Result_Type);
             begin
                if Has_Diagnosis (D) then
                   W := Warn (D, "function " & Name, Declaration.Location);
@@ -477,7 +577,7 @@ package body Hac_Bindgen.Traversal is
                when M.Procedure_Declaration
                   | M.Function_Declaration
                =>
-                  W := Classify_Subprogram (Declaration, Seen_Names);
+                  W := Classify_Subprogram (Pkg, Declaration, Seen_Names);
 
                when M.Type_Declaration =>
                   case Declaration.Declared_Kind is

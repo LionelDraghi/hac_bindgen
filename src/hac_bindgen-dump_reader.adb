@@ -500,7 +500,8 @@ package body Hac_Bindgen.Dump_Reader is
                            Is_Subtype => False,
                            Handleable => False,
                            Mirrorable => False,
-                           Mirror_Text => SU.Null_Unbounded_String);
+                           Mirror_Text => SU.Null_Unbounded_String,
+                           Components => <>);
             when M.Object_Declaration =>
                Pending := (Kind => M.Object_Declaration, Id => Id,
                            Source_Name => New_Name,
@@ -999,6 +1000,23 @@ package body Hac_Bindgen.Dump_Reader is
                               & Tok (Tokens, 2) & " .. " & Tok (Tokens, 4));
                end if;
             end;
+
+         elsif First = "component" then
+            --  A record component ([A009]): the flat component list
+            --  of a record type. The mirrorability of the type is set
+            --  by its first stated component: a record without any
+            --  stated component (null record, variant part) is not
+            --  mirrorable, and not bound.
+            Expect (Tokens'Length = 6, Line_No, "malformed component line");
+            Expect (Tok (Tokens, 3) = "type"
+                      and then Tok (Tokens, 5) = "resolved", Line_No,
+                    "malformed component line");
+            Pending.Mirrorable := True;
+            Pending.Components.Append
+              (M.Record_Component'
+                 (Name           => SU.To_Unbounded_String (Tok (Tokens, 2)),
+                  Component_Type =>
+                    Make_Reference (Tok (Tokens, 4), Tok (Tokens, 6))));
 
          else
             Fail (Line_No, "unknown sub-line """ & First & """");

@@ -11,7 +11,17 @@ package Witness_API is
 
    type Shade is (Red, Green, Blue);
 
+   type Witness_Point is record
+      X, Y : Integer;
+   end record;
+
    procedure Say (Message : in HAT.VString) with Import => True;
+
+   procedure Translate_Callback
+     (Result : out Witness_Point;
+      P      : in Witness_Point;
+      D      : in Witness_Point)
+   with Import => True;
 
    procedure Sum_Callback
      (Result : out Integer;

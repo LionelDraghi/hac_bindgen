@@ -96,7 +96,7 @@ GNATMETRIC := $(shell ls $$HOME/.local/share/alire/builds/libadalang_tools_*/*/b
 
 witness:
 	$(ALR) exec -- gprbuild -P tests/witness/witness.gpr
-	cd tests/witness && ../../bin/witness_main.exe
+	cd tests/witness && ../../bin/witness_main
 
 metrics:
 	@echo === source metrics with gnatmetric

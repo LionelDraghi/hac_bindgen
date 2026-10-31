@@ -522,8 +522,7 @@ repeated-execution scenarios have their own pages since:
   ```
 - When I run `../bin/hac-bindgen generate mixed_probe.ads --output-dir gen`
 - Then there is no error
-- And the output contains `warning HACB0005`
-- And the output contains `2 operations bound, 1 not bound`
+- And the output contains `3 operations bound, 0 not bound`
 - And there is a file `gen/mixed_probe.ads`
 - And the file `gen/mixed_probe.ads` contains
   ```
@@ -531,10 +530,8 @@ repeated-execution scenarios have their own pages since:
   ```
 - And the file `gen/mixed_probe.ads` contains
   ```
-  function Get (X : in Integer) return Integer;
+  procedure Move (P : in Point) with Import => True;
   ```
-- And the file `gen/mixed_probe.ads` does not contain `Move`
-- And the file `gen/mixed_probe_native.adb` does not contain `Move`
 
 ### Scenario: two runs produce byte-identical files
 

@@ -23,3 +23,6 @@ config/libadalang_probe_config.h
 
 # Local validation artifacts (metrics, bbt runs)
 artifacts/
+
+# Generated facades produced by the bbt scenario runs
+tests/gen/

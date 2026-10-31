@@ -1,21 +1,20 @@
 # A004 — Handle profile: opaque objects across the boundary <!-- omit from toc -->
 
-Status: Proposed
-Source: roadmap M6 (handles and enumerations); handle design arbitrated
-during the 2026-10-31 exploration (HAC capabilities verified by
-execution, access-to-private allocation verified with GNAT 16).
+The scalar profile of [A002](A002_facade_generation.md) binds values.
+The most common binding shape beyond that is an opaque object the
+script creates, passes to operations, and eventually releases — a
+`Widget`, a `Connection`, a `Document`. HAC cannot hold a native
+object (no `private type`, no composite boundary representation;
+verified by execution), but it can hold a number designating the
+object. This page owns the handle mapping: the HAC-side handle
+subtype, the generated registry with its explicit `Drop`, the
+boundary error on unknown handles, and the narrowed [HACB0004].
 
 ## Contents <!-- omit from toc -->
 
-- [Need](#need)
-- [Intended outcome](#intended-outcome)
-- [Scope](#scope)
-- [Non-goals](#non-goals)
-- [Acceptance criteria](#acceptance-criteria)
-- [Specification](#specification)
-  - [Handle representation](#handle-representation)
-  - [The registry helper](#the-registry-helper)
-  - [Classification changes](#classification-changes)
+- [Handle representation](#handle-representation)
+- [The registry helper](#the-registry-helper)
+- [Classification changes](#classification-changes)
 - [Executable scenarios](#executable-scenarios)
   - [Scenario: a script creates, uses and drops an opaque object](#scenario-a-script-creates-uses-and-drops-an-opaque-object)
   - [Scenario: an unknown handle is a defined boundary error](#scenario-an-unknown-handle-is-a-defined-boundary-error)
@@ -23,75 +22,8 @@ execution, access-to-private allocation verified with GNAT 16).
   - [Scenario: classification of private, tagged, limited and class-wide types](#scenario-classification-of-private-tagged-limited-and-class-wide-types)
 - [Verification beyond bbt](#verification-beyond-bbt)
 - [Design implications](#design-implications)
-- [Open questions](#open-questions)
-- [Finalization target](#finalization-target)
 
-## Need
-
-The scalar profile (A002) binds numbers, booleans and enumerations.
-The most common binding shape beyond that is an opaque object the
-script creates, passes to operations, and eventually releases — a
-`Widget`, a `Connection`, a `Document`. Today such types warn out
-([HACB0004]): the tool does not own the object representation. HAC
-cannot hold a native object: it has no `private type` (verified:
-HAC 0.45.0 rejects the declaration) and no composite boundary
-representation. But the script can hold a number designating the
-object, with the native adapter resolving that number to the real
-object at each call.
-
-## Intended outcome
-
-A private or tagged private type used as a boundary value is bound as
-a **handle**: an integer the script holds, resolved by the generated
-adapter to a native object it owns. Operations taking or returning
-such a type are bound and counted in the summary. An explicit
-generated `Drop` operation releases the registry entry; using a
-dropped or never-issued handle is a defined boundary error, never a
-silent reinterpretation ([S003]) and never a dangling access.
-
-## Scope
-
-- The classification of private/tagged private types as handleable,
-  and the narrowing of [HACB0004] (limited, interface, class-wide and
-  abstract types stay non-bindable).
-- The handle machinery of the generated files: the HAC-side handle
-  subtype, the `Drop` operation, the registry helper files, the
-  adapter callback changes.
-- The end-to-end and generate-only scenarios below.
-
-## Non-goals
-
-- Records, arrays and other composites as boundary values
-  ([HACB0005] unchanged; they may become handles in a later
-  profile — the mechanism is the same).
-- `limited`, interface, class-wide and abstract types.
-- Automatic lifetime management: the registry never frees an entry
-  on its own; ownership decisions belong to the application
-  ([HACB0016] spirit). The helper-registry *library* as a reusable
-  Alire crate stays a gadget; this page emits a self-contained
-  helper source.
-- `out` / `in out` copy-back ([A002-06], separate M6 item).
-- Several bound packages in one run (M6 item; the helper is emitted
-  once per run — the multi-package dedup question is that item's).
-
-## Acceptance criteria
-
-- A script creates opaque objects through a bound function, passes
-  the returned handles to bound procedures, and drops them; the
-  native side sees the real objects, reference semantics included
-  (the same handle designates the same object across calls).
-- A handle the registry never issued, or a dropped handle, stops the
-  script with a defined boundary error naming the type ([C002],
-  [S003], [S007]).
-- `check` classifies private/tagged-private parameters and results as
-  bound (no [HACB0004] warning); limited, class-wide and record
-  boundary values keep their warnings.
-- The scenarios below are green and promoted to
-  `docs/features/A004_handles.md` at Finalize.
-
-## Specification
-
-### Handle representation
+## Handle representation
 
 HAC-side, a handleable type `Widget` becomes exactly one mirror
 declaration:
@@ -125,7 +57,7 @@ for definite and indefinite full views):
 - Entries not dropped stay until process end; no automatic
   reclamation, no finalizer, no weak references.
 
-### The registry helper
+## The registry helper
 
 When a run binds at least one handleable type, `generate` emits a
 self-contained generic helper next to the adapter:
@@ -165,7 +97,7 @@ end Hac_Bindgen_Handles;
 The helper files are generated, carry the [S002] header, and are
 never hand-edited; the generated adapter is the only wither.
 
-### Classification changes
+## Classification changes
 
 - The dump already carries what classification needs — the
   definition spelling of a private partial view
@@ -428,17 +360,3 @@ the design because without it, no bound program could release registry
 memory. Reference semantics keep [S003]: a handle never stands for a
 value, only for the registry object it designates; unknown handles
 are [C002] boundary errors, never silent reinterprets.
-
-## Open questions
-
-None: representation, registry contract, Drop, and classification
-were arbitrated during the exploration; the remaining shape decisions
-(native `Handle` as a distinct subtype of `Integer`, the container
-behind the registry) are implementation details that do not constrain
-the behavior specified here.
-
-## Finalization target
-
-`docs/features/A004_handles.md`; [B001] catalogue and classification
-rules updated (HACB0004 narrowed, new handle rules) at the same
-Finalize.

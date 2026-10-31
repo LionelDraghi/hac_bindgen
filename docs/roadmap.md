@@ -71,7 +71,8 @@ is generated end to end.
 
 ## M6 — Wider profile (essential, incremental)
 
-- [ ] Handles and enumerations ([S003], new `Annn` pages)
+- [x] Handles and enumerations ([S003], new `Annn` pages — [A004],
+      [A005])
 - [ ] Strings end to end (ownership demonstrated, not assumed)
 - [ ] `out`/`in out` copy-back ([A002-06], [HACB0008] retired)
 - [ ] Several bound packages registering into one HAC environment

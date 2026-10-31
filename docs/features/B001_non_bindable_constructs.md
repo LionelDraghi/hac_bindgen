@@ -55,7 +55,7 @@ stable key: it never changes meaning.
 | HACB0001 | overloaded public name | HAC callbacks are keyed by a single name |
 | HACB0002 | operator symbol (`"+"`, ...) | not a valid callback name |
 | HACB0003 | access type or access parameter | no pointer representation across the VM boundary |
-| HACB0004 | private, limited, tagged, interface or class-wide type as boundary value | the tool does not own object representation |
+| HACB0004 | limited, interface, class-wide or abstract type as boundary value | the tool does not own object representation ([A004](A004_handles.md): private and tagged private types are handles) |
 | HACB0005 | record, discriminated record, anonymous array or record as boundary value | composite mapping deferred; explicit profile first |
 | HACB0006 | task or protected object | no VM representation |
 | HACB0007 | generic package or subprogram | instantiate natively, bind the instance |
@@ -90,15 +90,19 @@ stable key: it never changes meaning.
   they stand: access types (`HACB0003`), exception declarations
   (`HACB0011`), generic units (`HACB0007`), task and protected
   declarations (`HACB0006`), enumerations with character literals
-  (`HACB0017`, [A005](A005_enumerations.md)). Representation-choice
-  types (record, tagged, private) are only warned when they appear as
-  a boundary value: they may become handles in a later profile.
+  (`HACB0017`, [A005](A005_enumerations.md)). Other
+  representation-choice types are only warned when they appear as a
+  boundary value. Private and tagged private boundary values are
+  handles, not warnings ([A004](A004_handles.md)); limited,
+  interface and class-wide types keep the `HACB0004` warning.
 - A type is classified through the root of its subtype chain:
   integer, floating-point, boolean and enumeration roots are bindable,
   except an enumeration root with character literals, which warns
-  `HACB0017` ([A005](A005_enumerations.md));
-  access roots warn `HACB0003`; array, record and string roots warn
-  `HACB0005`; tagged and private roots warn `HACB0004`; fixed-point
+  `HACB0017` ([A005](A005_enumerations.md)); a private partial view
+  (not limited, not abstract) is bound as a handle
+  ([A004](A004_handles.md)); access roots warn `HACB0003`; array,
+  record and string roots warn `HACB0005`; tagged and other private
+  roots warn `HACB0004`; fixed-point
   and modular roots warn `HACB0010`; task and protected roots warn
   `HACB0006`; a type the analyser cannot resolve to a known category
   warns `HACB0013`. `System.Address` is recognized by name and warns

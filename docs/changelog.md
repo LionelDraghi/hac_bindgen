@@ -6,6 +6,8 @@ documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and the version numbering on [Semantic Versioning](https://semver.org/).
 
+- **[0.1.1-dev] - ????-??-??**
+
 - **[0.1.0] - 2026-10-31**
   - [Added] `hac-bindgen generate` produces the scripting facade of a package specification: the native adapter (callbacks, conversions, registration) and the HAC-side declarations, from the bound part of the API, with `--output-dir` and `--hac-package` to fit the project layout
   - [Added] `hac-bindgen check` classifies the public API: every declaration reported as bound or warned out, with a stable HACBxxxx identifier, a source location, a reason, and a per-package bound / not bound summary

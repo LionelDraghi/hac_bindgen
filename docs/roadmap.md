@@ -81,6 +81,26 @@ is generated end to end.
 - [x] Repeated script execution in the same witness application,
       if the HAC VM supports it ([A008]; supported)
 
+## M7 — Composite boundary values (essential)
+
+Targeted use case: generate the TopoScript bindings of
+[topoproof](https://github.com/LionelDraghi/topoproof)'s geometry
+domains (`tools/topocli`), whose script-facing operations exchange
+records (`Point_3D`, `Vector_3D`) — all warned out today
+([HACB0005]).
+
+- [ ] Record boundary values ([HACB0005] narrowed): a record type is
+      mirrored HAC-side and marshalled component-wise into consecutive
+      `Data` slots, the `Size_of` layout of the M2 evidence computed
+      recursively for nested records
+- [ ] Record copy-back: `out` / `in out` record parameters written
+      back like scalars, the native subtype checks applying on the way
+      back
+- [ ] First real-world binding: the TopoScript geometry domain of
+      topoproof generated end to end — records, enumerations and
+      scalars in one binding, exercised by the topocli witness
+      application
+
 ## Gadgets (later, on demand)
 
 - JSON binding manifest ([A002] mentions it; generation is trivial

@@ -23,96 +23,37 @@ Everything the API exposes and that hac-bindgen can bind is bound.
 Everything it cannot bind is reported as a warning — never silently
 dropped, and never a reason to reject the whole package.
 
-## User guide
+## Documentation
 
-### Getting it done
+### For the curious reader
 
-For a package specification `geometry.ads`, one command generates the
-facade:
+Read the [manifesto](docs/manifesto.md) — the motivation and the
+principles.
 
-```sh
-hac-bindgen generate geometry.ads --output-dir generated --hac-package HAC_Geometry
-```
+### For users
 
-What hac-bindgen writes, and what everyone does with it:
+Read the [user documentation index](docs/README.md), which contains
+in particular:
 
-```mermaid
----
-config:
-  theme: base
----
-flowchart TB
-    SRC["geometry.ads<br/>(your API, plain Ada)"] --> BINDGEN["hac-bindgen generate"]
-    BINDGEN --> HACPKG["generated/hac_geometry.ads, .adb<br/>the script-facing package"]
-    BINDGEN --> NATPKG["generated/geometry_native.ads, .adb<br/>the native adapter"]
-    BINDGEN --> OUT["standard output:<br/>warnings + bound / not bound summary"]
-    NATPKG -- "Register_All (BD)" --> APP["your application,<br/>embedding HAC"]
-    SCRIPT["your HAC script<br/>with HAC_Geometry;"] --> APP
-    APP --> RUN["GNAT compiles the native side;<br/>HAC interprets the script"]
-```
+- the [user guide](docs/user_guide.md);
+- the [error codes](docs/features/B001_non_bindable_constructs.md#the-catalogue) (the HACBxxxx catalogue);
+- the [changelog](docs/changelog.md).
 
-| Step | Who | What |
-|---|---|---|
-| 1. Generate | you | `hac-bindgen generate SOURCE... [--output-dir DIR] [--hac-package NAME]` |
-| 2. Compile | GNAT | the generated `*_native.ads/.adb` (and the API body) join your GNAT project; call `<Pkg>_Native.Register_All (BD)` from your embedding main — see the complete example in [tests/e2e/witness_main.adb](tests/e2e/witness_main.adb) |
-| 3. Run | HAC | your script `with`s the HAC-side package and calls the bound operations like any Ada package |
+If you hit a problem, you may also be interested in the known
+difficulties and limitations listed in the
+[open-work index](docs/dev/concerns.md).
 
-The generated file set, for a package `Geometry`:
+### For developers
 
-| File | Side | Content |
-|---|---|---|
-| `geometry.ads` / `.adb` (or `hac_geometry.ads` / `.adb` with `--hac-package`) | HAC | the package the script `with`es: bound declarations, type mirrors, private imports |
-| `geometry_native.ads` / `.adb` | native | `Register_All (BD)`, one callback per bound operation, the conversions, the handle registries |
+Read the [maintainer documentation index](docs/dev/README.md), which
+contains in particular:
 
-`--hac-package` renames the HAC-side package so the generated files
-can live in your source tree without clashing with the real
-`geometry.ads` in GNAT's path. `hac-bindgen check SOURCE...` runs the
-analysis and the classification only — same warnings, same summary,
-no files written.
-
-### What hac-bindgen does to your API
-
-The analysis pipeline is: **analyze** (Libadalang backend, isolated in
-its own crate) → **classify** (bindable or not) → **generate**. One
-traversal feeds both `check` and `generate` ([S006]).
-
-Bound today (the scalar and handle profiles):
-
-- Procedures and functions with `in` parameters; a bound function is
-  a real HAC function for the script.
-- Scalars: `Integer`, `Long_Float`, `Boolean`, user-defined range
-  types and their subtypes (native range checks preserved), and
-  enumerations — mirrored exactly on the HAC side and converted by
-  position, so representation clauses are harmless.
-- Private and tagged private types: bound as **integer handles** —
-  the script holds an opaque number, the generated adapter resolves
-  it to the object it owns. A generated `Drop_<T>` operation releases
-  the registry entry; a dropped or never-issued handle stops the
-  script with a defined boundary error.
-
-Warned out, never silently dropped ([B001]): each non-bindable
-declaration gets a stable `HACBxxxx` identifier, the source location,
-and a reason, on standard output, followed by a per-package bound /
-not bound summary. Warnings are diagnostics: the exit status stays
-`0`. The catalogue covers, among others: overloaded names, access
-types and `System.Address`, records as boundary values, `out` /
-`in out` parameters, generics, tasks and protected objects,
-exception declarations.
-
-Not yet (planned, [docs/roadmap.md](docs/roadmap.md)): `out` /
-`in out` copy-back, strings end to end, several bound packages in one
-run, repeated script execution.
-
-The conversion rule everywhere: **no silent conversion** ([S003]) —
-a value that cannot cross safely is warned out at generation time or
-reports a defined error at run time, never a default value.
+- the [development workflow](docs/dev/development_workflow.md);
+- the [design discussions](docs/dev/design_discussions.md).
 
 ## Status
 
-Development. See [docs/manifesto.md](docs/manifesto.md) for the
-motivation and the principles, and
-[docs/specifications.md](docs/specifications.md) for the specification
-structure and the index of features.
+Development.
 
 ## Build and test
 

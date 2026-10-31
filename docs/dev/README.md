@@ -3,7 +3,9 @@
 This directory holds what the maintainers need to work on the project:
 the workflow, the release parameters, the indexes of open work, and the
 structural choices. It is not user-facing documentation: that lives in
-[`docs/features/`](../features/) and the other top-level documents.
+[`docs/features/`](../features/) and the other top-level documents, and
+has its own index, [`docs/README.md`](../README.md) — the two indexes
+point to each other, so if you got lost, follow that way.
 
 ## In this directory
 

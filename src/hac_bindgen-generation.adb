@@ -27,6 +27,7 @@ package body Hac_Bindgen.Generation is
    use SU;
    use type M.Classification_Kind;
    use type M.Declaration_Kind;
+   use type M.Parameter_Mode;
 
    --  How a value of one type crosses the boundary.
    type Conversion_Kind is
@@ -42,6 +43,7 @@ package body Hac_Bindgen.Generation is
    type Bound_Parameter is record
       Name        : Unbounded_String;
       Type_Mark   : Unbounded_String;  --  as written in the source
+      Mode        : M.Parameter_Mode;
       Kind        : Conversion_Kind;
       Handle_Root : Unbounded_String;  --  Handle_Kind: the handleable
                                        --  root type of the mark
@@ -238,6 +240,18 @@ package body Hac_Bindgen.Generation is
          end;
       end HAC_Mirror;
 
+      function Mode_Image (Mode : M.Parameter_Mode) return String is
+      begin
+         case Mode is
+            when M.In_Mode =>
+               return "in";
+            when M.In_Out_Mode =>
+               return "in out";
+            when M.Out_Mode =>
+               return "out";
+         end case;
+      end Mode_Image;
+
       --  Same as Param_List, with the marks spelled the HAC way.
       function HAC_Param_List
         (Params : Bound_Parameter_Vectors.Vector) return String
@@ -248,8 +262,8 @@ package body Hac_Bindgen.Generation is
             if Length (Buffer) > 0 then
                Buffer := Buffer & "; ";
             end if;
-            Buffer := Buffer & P.Name & " : in "
-                      & HAC_Mark (To_String (P.Type_Mark));
+            Buffer := Buffer & P.Name & " : " & Mode_Image (P.Mode)
+                      & " " & HAC_Mark (To_String (P.Type_Mark));
          end loop;
          if Length (Buffer) = 0 then
             return "";
@@ -272,11 +286,30 @@ package body Hac_Bindgen.Generation is
             if Length (Buffer) > 0 then
                Buffer := Buffer & "; ";
             end if;
-            Buffer := Buffer & P.Name & " : in "
-                      & HAC_Mark (To_String (P.Type_Mark));
+            Buffer := Buffer & P.Name & " : " & Mode_Image (P.Mode)
+                      & " " & HAC_Mark (To_String (P.Type_Mark));
          end loop;
          return " (" & To_String (Buffer) & ")";
       end Callback_Param_List;
+
+      --  A standard type stands alone; a local one is qualified by
+      --  the API package.
+      function Qualified (Mark : String) return String is
+      begin
+         if Mark = "Integer"
+           or else Mark = "Long_Float"
+           or else Mark = "Boolean"
+         then
+            return Mark;
+         else
+            return Api_Name & "." & Mark;
+         end if;
+      end Qualified;
+
+      --  The native type of a bound parameter, for the copy-back
+      --  locals.
+      function Native_Type_Of (Mark : String) return String is
+         (Qualified (Mark));
 
       function Image (N : Positive) return String is
          S : constant String := N'Image;
@@ -450,6 +483,7 @@ package body Hac_Bindgen.Generation is
                           (Bound_Parameter'
                              (Name        => P.Source_Name,
                               Type_Mark   => P.Parameter_Type.Source_Name,
+                              Mode        => P.Mode,
                               Kind        => Conversion_Of (P.Parameter_Type),
                               Handle_Root =>
                                 (if Conversion_Of (P.Parameter_Type)
@@ -500,6 +534,7 @@ package body Hac_Bindgen.Generation is
                     (Name        => To_Unbounded_String ("W"),
                      Type_Mark   => To_Unbounded_String
                                       (To_String (T) & "_Handle"),
+                     Mode        => M.In_Mode,
                      Kind        => Handle_Kind,
                      Handle_Root => T));
                Bound.Append (Drop_Op);
@@ -609,20 +644,6 @@ package body Hac_Bindgen.Generation is
 
       procedure Collect_Instantiations is
 
-         function Qualified (Mark : String) return String is
-         begin
-            --  A standard type stands alone; a local one is qualified
-            --  by the API package.
-            if Mark = "Integer"
-              or else Mark = "Long_Float"
-              or else Mark = "Boolean"
-            then
-               return Mark;
-            else
-               return Api_Name & "." & Mark;
-            end if;
-         end Qualified;
-
          procedure Add
            (To_HAC : Boolean;
             Kind   : Conversion_Kind;
@@ -654,10 +675,22 @@ package body Hac_Bindgen.Generation is
                     | Any_Float_Kind
                     | Any_Enum_Kind
                   =>
-                     Add
-                       (To_HAC => False,
-                        Kind   => P.Kind,
-                        Mark   => To_String (P.Type_Mark));
+                     --  Each direction is instantiated when actually
+                     --  used: an out parameter is never read, an in
+                     --  parameter is never written back ([copy-back
+                     --  proposal]).
+                     if P.Mode /= M.Out_Mode then
+                        Add
+                          (To_HAC => False,
+                           Kind   => P.Kind,
+                           Mark   => To_String (P.Type_Mark));
+                     end if;
+                     if P.Mode /= M.In_Mode then
+                        Add
+                          (To_HAC => True,
+                           Kind   => P.Kind,
+                           Mark   => To_String (P.Type_Mark));
+                     end if;
                   when others =>
                      null;
                end case;
@@ -870,72 +903,98 @@ package body Hac_Bindgen.Generation is
 
          for S of Bound loop
             TIO.New_Line (File);
-            TIO.Put_Line
-              (File,
-               "   procedure " & To_String (S.Name)
-               & "_Callback (Data : in out HAC_Element_Array) is");
-            TIO.Put_Line (File, "   begin");
-
-            if S.Synthetic then
-               --  The generated Drop_<T> ([A004]): release the
-               --  registry entry; a later use of the handle is the
-               --  Unknown_Handle boundary error.
-               declare
-                  Root : constant String :=
-                    To_String (S.Params.First_Element.Handle_Root);
-               begin
-                  TIO.Put_Line
-                    (File,
-                     "      " & Root & "_Handles.Drop ("
-                     & Root & "_Handles.Handle (Integer'"
-                     & "(To_Native (Data (1)))));");
-               end;
-
-            else
-               declare
-                  --  A parameterless operation is called without
-                  --  parentheses: GNAT rejects the empty actual
-                  --  parameter part ([A004], Make_Widget pattern).
-                  Call  : Unbounded_String := Api_Name & "." & S.Name;
-                  First : Boolean := True;
-                  --  A function writes its result into slot 1; the
-                  --  arguments follow ([A002], callback layout).
-                  Slot  : Positive := (if S.Is_Function then 2 else 1);
-               begin
+            declare
+               Call : Unbounded_String := Api_Name & "." & S.Name;
+               First : Boolean := True;
+               Slot  : Positive := (if S.Is_Function then 2 else 1);
+               --  The out / in out scalar parameters cross through
+               --  native locals ([copy-back]): declared before the
+               --  call, written back into their Data slot after.
+               Locals : Unbounded_String;
+               Writes : Unbounded_String;
+            begin
+               if not S.Synthetic then
                   for P of S.Params loop
-                     if First then
-                        Call := Call & " (";
-                     else
-                        Call := Call & ", ";
-                     end if;
-                     First := False;
-                     Call := Call & To_String (P.Name) & " => "
-                             & Read_Expression (P, Slot);
+                     declare
+                        Name : constant String := To_String (P.Name);
+                        Mark : constant String := To_String (P.Type_Mark);
+                     begin
+                        if First then
+                           Call := Call & " (";
+                        else
+                           Call := Call & ", ";
+                        end if;
+                        First := False;
+
+                        if P.Mode /= M.In_Mode
+                          and then P.Kind /= Handle_Kind
+                        then
+                           Call := Call & Name;
+                           Locals := Locals
+                             & "      " & Name & " : "
+                             & Native_Type_Of (Mark)
+                             & (if P.Mode = M.In_Out_Mode
+                                then " := " & Read_Expression (P, Slot)
+                                else "")
+                             & ";" & ASCII.LF;
+                           Writes := Writes
+                             & "      Data (" & Image (Slot) & ") := "
+                             & Write_Expression (P.Kind, Mark, Name)
+                             & ";" & ASCII.LF;
+                        else
+                           Call := Call & Name & " => "
+                                   & Read_Expression (P, Slot);
+                        end if;
+                     end;
                      Slot := Slot + 1;
                   end loop;
                   if not First then
                      Call := Call & ")";
                   end if;
+               end if;
 
-                  if S.Is_Function then
+               TIO.Put_Line
+                 (File,
+                  "   procedure " & To_String (S.Name)
+                  & "_Callback (Data : in out HAC_Element_Array) is");
+               TIO.Put (File, To_String (Locals));
+               TIO.Put_Line (File, "   begin");
+
+               if S.Synthetic then
+                  --  The generated Drop_<T> ([A004]): release the
+                  --  registry entry; a later use of the handle is the
+                  --  Unknown_Handle boundary error.
+                  declare
+                     Root : constant String :=
+                       To_String (S.Params.First_Element.Handle_Root);
+                  begin
                      TIO.Put_Line
                        (File,
-                        "      Data (1) := "
-                        & Write_Expression
-                            (S.Result_Kind,
-                             (if S.Result_Kind = Handle_Kind
-                              then To_String (S.Result_Root)
-                              else To_String (S.Result_Mark)),
-                             To_String (Call))
-                        & ";");
-                  else
-                     TIO.Put_Line (File, "      " & To_String (Call) & ";");
-                  end if;
-               end;
-            end if;
-            TIO.Put_Line
-              (File,
-               "   end " & To_String (S.Name) & "_Callback;");
+                        "      " & Root & "_Handles.Drop ("
+                        & Root & "_Handles.Handle (Integer'"
+                        & "(To_Native (Data (1)))));");
+                  end;
+
+               elsif S.Is_Function then
+                  TIO.Put_Line
+                    (File,
+                     "      Data (1) := "
+                     & Write_Expression
+                         (S.Result_Kind,
+                          (if S.Result_Kind = Handle_Kind
+                           then To_String (S.Result_Root)
+                           else To_String (S.Result_Mark)),
+                          To_String (Call))
+                     & ";");
+               else
+                  TIO.Put_Line (File, "      " & To_String (Call) & ";");
+               end if;
+
+               TIO.Put (File, To_String (Writes));
+               TIO.Put_Line
+                 (File,
+                  "   end " & To_String (S.Name) & "_Callback;");
+            end;
          end loop;
 
          TIO.New_Line (File);

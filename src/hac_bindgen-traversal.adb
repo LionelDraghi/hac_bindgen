@@ -332,19 +332,13 @@ package body Hac_Bindgen.Traversal is
          W : Warning := No_Warning;
       begin
          for Item of Declaration.Parameters loop
-            if Item.Mode /= M.In_Mode then
-               W := Warn
-                 (Diagnose
-                    (Mode_Id,
-                     "the copy-back semantics is not demonstrated yet"),
-                  "parameter " & SU.To_String (Item.Source_Name),
-                  Item.Location);
-               exit;
-            end if;
-
             declare
                D : constant Diagnosis :=
                  Boundary_Diagnosis (Item.Parameter_Type);
+               Handleable : constant Boolean :=
+                 not Item.Parameter_Type.Subtype_Chain.Is_Empty
+                 and then Item.Parameter_Type.Subtype_Chain
+                            .Last_Element.Handleable;
             begin
                if Has_Diagnosis (D) then
                   W := Warn
@@ -353,8 +347,38 @@ package body Hac_Bindgen.Traversal is
                      Item.Location);
                   exit;
                end if;
-            end;
 
+               if Item.Mode /= M.In_Mode then
+                  if Declaration.Kind = M.Function_Declaration then
+                     --  HAC's functions have in-only parameters
+                     --  (verified: the declaration is a parse error).
+                     W := Warn
+                       (Diagnose
+                          (Mode_Id,
+                           "HAC functions have in-only parameters"),
+                        "parameter " & SU.To_String (Item.Source_Name),
+                        Item.Location);
+                     exit;
+                  elsif Item.Mode = M.Out_Mode
+                    and then Handleable
+                  then
+                     --  A fresh out value would need an uninitialized
+                     --  native object, which an indefinite full view
+                     --  forbids ([copy-back proposal]).
+                     W := Warn
+                       (Diagnose
+                          (Mode_Id,
+                           "the callback cannot default-construct"
+                           & " the native object"),
+                        "parameter " & SU.To_String (Item.Source_Name),
+                        Item.Location);
+                     exit;
+                  end if;
+                  --  A procedure's scalar out / in out, and a
+                  --  handleable in out (the registry object passed in
+                  --  place): bound with copy-back.
+               end if;
+            end;
          end loop;
 
          if not Is_Warned (W)

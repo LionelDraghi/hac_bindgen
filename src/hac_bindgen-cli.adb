@@ -113,6 +113,10 @@ package body Hac_Bindgen.CLI is
                --  Options and sources, in any order ([S010]): the
                --  arguments are parsed first, the sources are
                --  processed afterwards.
+               Output_Dir_Index : Natural := 0;
+               --  The command-line position of --output-dir, when
+               --  present: the echoed command omits it ([A002]).
+
                procedure Parse_Arguments is
                   I : Positive := 2;
                begin
@@ -131,6 +135,7 @@ package body Hac_Bindgen.CLI is
                               Fail ("option '" & Arg & "' needs a value");
                            end if;
                            if Arg = "--output-dir" then
+                              Output_Dir_Index := I;
                               Output_Dir := To_Unbounded_String
                                 (CL.Argument (I + 1));
                            else
@@ -247,6 +252,32 @@ package body Hac_Bindgen.CLI is
                      end loop;
                   end Reject_Duplicate_Package_Names;
 
+                  --  The invocation line echoed in the header of every
+                  --  generated file ([A002]): the tool name followed by
+                  --  the arguments as typed, --output-dir excepted —
+                  --  the output location is the file's own directory,
+                  --  and two runs into different directories must stay
+                  --  byte-identical ([A002], determinism scenario).
+                  function Build_Command return String is
+                     Buffer : Unbounded_String :=
+                       To_Unbounded_String ("hac-bindgen");
+                  begin
+                     for I in 1 .. CL.Argument_Count loop
+                        if I = Output_Dir_Index then
+                           null;
+                        elsif I = Output_Dir_Index + 1
+                          and then Output_Dir_Index > 0
+                        then
+                           null;
+                        else
+                           Buffer := Buffer & " " & CL.Argument (I);
+                        end if;
+                     end loop;
+                     return To_String (Buffer);
+                  end Build_Command;
+
+                  Command : constant String := Build_Command;
+
                   procedure Generate_All is
                   begin
                      for M of Models loop
@@ -259,7 +290,8 @@ package body Hac_Bindgen.CLI is
                              (M,
                               The_Result,
                               To_String (Hac_Package),
-                              To_String (Output_Dir));
+                              To_String (Output_Dir),
+                              Command);
                         exception
                            when Error : Generation.Generation_Error =>
                               Fail (Ada.Exceptions.Exception_Message

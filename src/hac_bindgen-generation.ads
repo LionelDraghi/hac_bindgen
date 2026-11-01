@@ -21,12 +21,15 @@ package Hac_Bindgen.Generation is
      (Pkg         : Model.Package_Model;
       Result      : Model.Analysis_Result;
       Hac_Package : String;
-      Output_Dir  : String);
+      Output_Dir  : String;
+      Command     : String := "");
    --  Emit the generated files of one package into Output_Dir ("" means
    --  the current directory). Hac_Package is the HAC-side package name:
    --  the API name, or the --hac-package value. Only the declarations
    --  classified Bindable take part; the caller ran the traversal
-   --  first and reported its warnings. Raises Generation_Error when a
-   --  file cannot be written.
+   --  first and reported its warnings. Command is the invocation line
+   --  echoed in the header of every generated file, next to the
+   --  generation date; empty keeps the version-only header. Raises
+   --  Generation_Error when a file cannot be written.
 
 end Hac_Bindgen.Generation;

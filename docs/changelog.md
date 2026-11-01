@@ -6,6 +6,8 @@ documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and the version numbering on [Semantic Versioning](https://semver.org/).
 
+- **[0.1.2-dev] - ????-??-??**
+
 - **[0.1.1] - 2026-11-01**
   - [Added] every generated file carries the invocation line and the generation time stamp in its header, next to the generator version
   - [Added] record types with a flat list of bindable scalar components cross the boundary component-wise, with copy-back for `out` and `in out` record parameters, and a warning naming the offending component when a record is not bound

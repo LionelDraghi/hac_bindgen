@@ -128,6 +128,7 @@ The end-to-end scenarios use the harness of
 | A009-01 | a record value crosses the boundary, component-wise |
 | A009-02 | record copy-back: `out` / `in out` record parameters |
 | A009-03 | a record with a non-bindable component is warned out |
+| A009-04 | a function returning a record is warned out |
 
 ### Scenario: a record value crosses the boundary, component-wise
 
@@ -263,6 +264,23 @@ not bound.
 - Then the output contains `warning HACB0005`
 - And the output contains `Cells`
 - And the output contains `0 operations bound, 1 not bound`
+
+### Scenario: a function returning a record is warned out
+
+HAC functions return atomic values only: a record result crosses as a
+procedure's `out` parameter, not as a function result ([A009] non-goal).
+
+- Given the new file `rec_fn.ads` containing
+  ```ada
+  package Rec_Fn is
+     type Point is record X, Y : Integer; end record;
+     function Origin return Point;
+  end Rec_Fn;
+  ```
+- When I successfully run `../bin/hac-bindgen check rec_fn.ads`
+- Then the output contains `warning HACB0005`
+- And the output contains `HAC function results are atomic types only`
+- And the output contains `0 operations bound, 1 not bound (see warnings)`
 
 ## Verification beyond bbt
 

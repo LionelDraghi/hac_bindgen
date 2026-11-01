@@ -521,8 +521,20 @@ package body Hac_Bindgen.Traversal is
            and then Declaration.Kind = M.Function_Declaration
          then
             declare
+               Result : M.Type_Reference renames Declaration.Result_Type;
                D : constant Diagnosis :=
-                 Boundary_Diagnosis (Pkg, Declaration.Result_Type);
+                 (if not Result.Subtype_Chain.Is_Empty
+                    and then Result.Subtype_Chain.Last_Element.Kind
+                               = M.Record_Type
+                  then
+                    --  [A009]: HAC functions return atomic values only
+                    --  (the Size_of of a function result is one cell);
+                    --  a record result crosses as a procedure's out
+                    --  parameter instead.
+                    Diagnose
+                      (Composite_Id,
+                       "HAC function results are atomic types only")
+                  else Boundary_Diagnosis (Pkg, Result));
             begin
                if Has_Diagnosis (D) then
                   W := Warn (D, "function " & Name, Declaration.Location);

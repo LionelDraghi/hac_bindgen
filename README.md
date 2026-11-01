@@ -21,8 +21,7 @@ needs to call native code:
 
 - the native adapter (argument retrieval, conversion, call, result
   conversion, callback registration), built on `HAC_Sys.Interfacing`;
-- the HAC-side declarations (`with Import => True` stubs);
-- the binding manifest.
+- the HAC-side declarations (`with Import => True` stubs).
 
 Everything the API exposes and that hac-bindgen can bind is bound.
 Everything it cannot bind is reported as a warning — never silently
@@ -58,7 +57,12 @@ contains in particular:
 
 ## Status
 
-Development.
+Development. 
+
+What hac-bindgen can and cannot bind today — scalars,
+strings, records and handles cross the boundary; arrays, variant
+records and function results of records are warned out — is detailed
+in the [user guide](docs/user_guide.md#what-hac-bindgen-does-to-your-api).
 
 ## Getting it
 

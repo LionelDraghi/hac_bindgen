@@ -27,6 +27,28 @@ Everything the API exposes and that hac-bindgen can bind is bound.
 Everything it cannot bind is reported as a warning — never silently
 dropped, and never a reason to reject the whole package.
 
+## Status
+
+Development.
+
+What hac-bindgen can and cannot bind today — scalars,
+strings, records and handles cross the boundary; arrays, variant
+records and function results of records are warned out — is detailed
+in the [user guide](docs/user_guide.md#what-hac-bindgen-does-to-your-api).
+
+## Getting it
+
+The crate is not published on Alire's community index yet: clone the
+repository and build it with Alire (a GNAT toolchain is required —
+`alr` installs or reuses one):
+
+```sh
+git clone https://github.com/LionelDraghi/hac_bindgen
+cd hac_bindgen
+make build          # Alire build; the binary lands in bin/hac-bindgen
+make check          # build + run the bbt executable documentation
+```
+
 ## Documentation
 
 ### For the curious reader
@@ -54,28 +76,6 @@ contains in particular:
 
 - the [development workflow](docs/dev/development_workflow.md);
 - the [design discussions](docs/dev/design_discussions.md).
-
-## Status
-
-Development.
-
-What hac-bindgen can and cannot bind today — scalars,
-strings, records and handles cross the boundary; arrays, variant
-records and function results of records are warned out — is detailed
-in the [user guide](docs/user_guide.md#what-hac-bindgen-does-to-your-api).
-
-## Getting it
-
-The crate is not published on Alire's community index yet: clone the
-repository and build it with Alire (a GNAT toolchain is required —
-`alr` installs or reuses one):
-
-```sh
-git clone https://github.com/LionelDraghi/hac_bindgen
-cd hac_bindgen
-make build          # Alire build; the binary lands in bin/hac-bindgen
-make check          # build + run the bbt executable documentation
-```
 
 ## Licence
 

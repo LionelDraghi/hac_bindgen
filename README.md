@@ -1,5 +1,10 @@
 # hac_bindgen <!-- omit from toc -->
 
+[![image](https://img.shields.io/badge/-inside-blue?logo=ada&logoColor=white&labelColor=grey&logoSize=auto)](https://ada-lang.io/)
+[![Version](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2FLionelDraghi%2Fhac_bindgen%2Fmain%2Falire.toml&query=%24.version&label=latest&style=flat-square)](https://github.com/LionelDraghi/hac_bindgen/blob/main/alire.toml)
+[![bbt](https://img.shields.io/badge/bbt-54%20scenarios%20passing-brightgreen?style=flat-square)](docs/README.md)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://opensource.org/licenses/Apache-2.0)
+
 Embed the [HAC](https://github.com/zertovitch/hac) Ada interpreter in
 your Ada application: users write scripts that run inside the program
 and call its functions. Exposing those functions to a script takes
@@ -55,12 +60,17 @@ contains in particular:
 
 Development.
 
-## Build and test
+## Getting it
+
+The crate is not published on Alire's community index yet: clone the
+repository and build it with Alire (a GNAT toolchain is required —
+`alr` installs or reuses one):
 
 ```sh
-make build   # Alire build
-make check   # build + bbt executable documentation
-make a003    # shortcut to run A003_interchange_dump.md scenario
+git clone https://github.com/LionelDraghi/hac_bindgen
+cd hac_bindgen
+make build          # Alire build; the binary lands in bin/hac-bindgen
+make check          # build + run the bbt executable documentation
 ```
 
 ## Licence

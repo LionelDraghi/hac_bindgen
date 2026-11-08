@@ -1,0 +1,6 @@
+#  hac-bindgen regenerates the Ada glue at every `make doc`
+#  (see the Makefile doc target); only files listed as exceptions
+#  here belong to the example itself.
+hac_geometry.ad?
+geometry_native.ad?
+hac_bindgen_handles.ad?

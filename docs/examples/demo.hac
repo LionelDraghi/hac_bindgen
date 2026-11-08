@@ -1,0 +1,22 @@
+with HAT;
+with HAC_Geometry;
+
+procedure Demo is
+
+   use HAT;
+
+   A, B : HAC_Geometry.Point;
+   D    : Real;
+
+begin
+   A.X := 0;
+   A.Y := 0;
+   B.X := 3;
+   B.Y := 4;
+
+   D := HAC_Geometry.Distance (A, B);
+
+   Put ("distance = ");
+   Put (D, 1, 1, 0);
+   New_Line;
+end Demo;

@@ -44,7 +44,7 @@ mkdir -p $(BBT_ARTIFACTS); \
 cd tests && $(BBT) -nt --yes --cleanup=full $$files
 endef
 
-.PHONY: all help check build release backend witness metrics clean $(SCENARIO_TARGETS)
+.PHONY: all help check build release backend witness metrics doc clean $(SCENARIO_TARGETS)
 
 all: check
 
@@ -57,6 +57,7 @@ help:
 	@echo "  make release  build the tool in release mode"
 	@echo "  make backend  build the Libadalang analysis backend crate"
 	@echo "  make metrics  run gnatmetric over src/, report in artifacts/metrics"
+	@echo "  make doc    run the examples page (bbt, no cleanup: generated files stay)"
 	@echo "  make clean  remove build and test artifacts"
 	@echo "  make help   this list"
 
@@ -97,6 +98,12 @@ GNATMETRIC := $(shell ls $$HOME/.local/share/alire/builds/libadalang_tools_*/*/b
 witness:
 	$(ALR) exec -- gprbuild -P tests/witness/witness.gpr
 	cd tests/witness && ../../bin/witness_main
+
+# The examples page is executable documentation too: unlike the test
+# scenarios it runs without --cleanup, so the files it generates stay
+# visible next to the example source.
+doc:
+	cd docs/examples && $(BBT) --yes README.md
 
 metrics:
 	@echo === source metrics with gnatmetric

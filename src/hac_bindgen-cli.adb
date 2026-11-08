@@ -276,7 +276,12 @@ package body Hac_Bindgen.CLI is
                      return To_String (Buffer);
                   end Build_Command;
 
-                  Command : constant String := Build_Command;
+                  --  The invocation line echoed in the header of every
+                  --  generated file ([A002]). Named Invocation_Line,
+                  --  not Command: the dispatch below must compare
+                  --  against the outer Command (CL.Argument (1)), the
+                  --  command word only.
+                  Invocation_Line : constant String := Build_Command;
 
                   procedure Generate_All is
                   begin
@@ -291,7 +296,7 @@ package body Hac_Bindgen.CLI is
                               The_Result,
                               To_String (Hac_Package),
                               To_String (Output_Dir),
-                              Command);
+                              Invocation_Line);
                         exception
                            when Error : Generation.Generation_Error =>
                               Fail (Ada.Exceptions.Exception_Message

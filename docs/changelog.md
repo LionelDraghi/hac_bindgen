@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and the version numbering on [Semantic Versioning](https://semver.org/).
 
 - **[0.1.2-dev] - ????-??-??**
+  - [Added] a runnable getting-started example (`docs/examples`): an existing API in `src/`, one `generate` command, the binding in `generated_src/`, an embedding demo application and a HAC script printing a distance — the whole chain re-executed at every `make doc` by the bbt scenarios of the page, with a self-contained Makefile (`make build`, `make check`, `make clean`)
+  - [Fixed] `hac-bindgen check` no longer writes the generated facade: it is the dry run announced, and used to behave like `generate`
 
 - **[0.1.1] - 2026-11-01**
   - [Added] every generated file carries the invocation line and the generation time stamp in its header, next to the generator version

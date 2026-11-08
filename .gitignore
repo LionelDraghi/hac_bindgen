@@ -26,3 +26,8 @@ artifacts/
 
 # Generated facades produced by the bbt scenario runs
 tests/gen/
+
+# Residues of the docs/examples runs (removed by make clean there):
+# the demo binary and the bbt result dumps
+docs/examples/demo_main
+docs/examples/*.out

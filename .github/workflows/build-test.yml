@@ -111,6 +111,24 @@ jobs:
           (cd ../bbt && alr build)
           echo "$(cd ../bbt && pwd)" >> "${GITHUB_PATH}"
 
+      - name: Dump the redirected backend runs (Windows diagnostic)
+        # The A003 'dump is deterministic' scenario fails on Windows
+        # with a silent non-zero exit of the backend, but only in its
+        # redirected form. Replay the same shape here: two redirected
+        # runs, print their exit status and the two dumps for the
+        # next diagnosis.
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cd tests
+          printf 'package Probe_Fixture is\n   procedure Mutate (X : in Integer);\nend Probe_Fixture;\n' > probe_fixture.ads
+          ../tools/libadalang_backend/bin/hac_bindgen_backend probe_fixture.ads > run_1.txt
+          echo "run_1 exit: $?"
+          ../tools/libadalang_backend/bin/hac_bindgen_backend probe_fixture.ads > run_2.txt
+          echo "run_2 exit: $?"
+          echo --- run_1; cat run_1.txt
+          echo --- run_2; cat run_2.txt
+
       - name: Build and run the checks
         # make check = tool build (GNAT 16.x), backend build (GNAT 15.x
         # line), the bbt scenarios of docs/features, then the

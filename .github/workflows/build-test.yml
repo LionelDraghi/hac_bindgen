@@ -80,14 +80,18 @@ jobs:
           restore-keys: |
             ${{ matrix.os }}-alire-
 
-      - name: Install bbt
-        # The test suite is the bbt executable documentation
-        # (docs/features), exactly as in a local `make check`.
+      - name: Build bbt from its main branch
+        # The executable documentation runs with bbt, but the release
+        # published in the Alire index predates the GNAT 16 line and
+        # does not compile with the runner's default toolchain. bbt's
+        # main requires GNAT >= 16, exactly like hac_bindgen: build it
+        # from a shallow sibling clone (its gpr leaves the binary at
+        # the crate root), instead of `alr install bbt`.
         shell: bash
         run: |
-          cd "${RUNNER_TEMP}"
-          alr install bbt
-          echo "$HOME/.alire/bin" >> "${GITHUB_PATH}"
+          git clone --depth 1 --branch main https://github.com/LionelDraghi/bbt ../bbt
+          (cd ../bbt && alr build)
+          echo "$(cd ../bbt && pwd)" >> "${GITHUB_PATH}"
 
       - name: Build and run the checks
         # make check = tool build (GNAT 16.x), backend build (GNAT 15.x

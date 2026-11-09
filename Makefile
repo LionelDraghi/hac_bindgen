@@ -44,20 +44,22 @@ mkdir -p $(BBT_ARTIFACTS); \
 cd tests && $(BBT) -nt --yes --cleanup=full $$files
 endef
 
-.PHONY: all help check build release backend witness metrics doc clean $(SCENARIO_TARGETS)
+.PHONY: all help check build release backend witness metrics examples clean $(SCENARIO_TARGETS)
 
 all: check
 
 help:
 	@echo "hac_bindgen targets:"
 	@echo "  make        = make all = check (build + tests)"
-	@echo "  make check  build (tool + backend), then run the bbt executable documentation"
+	@echo "  make check  build (tool + backend), then run the bbt executable"
+	@echo "               documentation: the features scenarios, then the"
+	@echo "               examples page (files stay visible, see make examples)"
 	@echo "  make <scenario prefix, case insensitive>  run one scenario page, e.g. make a003, make b001"
 	@echo "  make build  build the tool only (validation mode)"
 	@echo "  make release  build the tool in release mode"
 	@echo "  make backend  build the Libadalang analysis backend crate"
 	@echo "  make metrics  run gnatmetric over src/, report in artifacts/metrics"
-	@echo "  make doc    run the examples page (bbt, no cleanup: generated files stay)"
+	@echo "  make examples  run the examples page (bbt, no cleanup: generated files stay)"
 	@echo "  make clean  remove build and test artifacts"
 	@echo "  make help   this list"
 
@@ -65,6 +67,8 @@ check: build backend
 	@echo === running the bbt executable documentation
 	mkdir -p $(BBT_ARTIFACTS)
 	cd tests && $(BBT) -nt --yes --cleanup=full ../$(FEATURES_DIR)
+	@echo === running the examples page
+	$(MAKE) examples
 	@echo === build and tests OK
 
 $(SCENARIO_TARGETS): build backend
@@ -102,7 +106,7 @@ witness:
 # The examples page is executable documentation too: unlike the test
 # scenarios it runs without --cleanup, so the files it generates stay
 # visible next to the example source.
-doc:
+examples:
 	cd docs/examples && $(BBT) --yes README.md
 
 metrics:

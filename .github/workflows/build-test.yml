@@ -1,0 +1,102 @@
+name: Build and test
+
+on:                    # Run the workflow for each of the following events:
+  push:                # - The main branch is pushed or updated.
+    branches:
+      - main
+    paths: &trigger_paths
+      - 'src/**'
+      - 'tests/**'
+      - 'tools/**'
+      - 'docs/features/**'
+      - 'docs/examples/**'
+      - '.github/workflows/**'
+      - 'Makefile'
+      - 'alire.toml'
+      - 'hac_bindgen.gpr'
+
+  pull_request:        # - A pull-request is opened or updated.
+    paths: *trigger_paths
+
+  workflow_dispatch:   # - A manual run of the workflow is requested from
+                       #   the GitHub web interface.
+
+concurrency:
+  # A new push cancels the run still in flight: the Libadalang build
+  # takes the large share of a run, no need to let two of them fight.
+  group: build-and-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  main:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false # Don't stop all the workflows when one of them fails.
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-15]
+        # macos-15, not macos-latest: the macOS 26 (Tahoe) image ships
+        # Command Line Tools 26.6, whose SDK .tbd stubs list the arm64e.x1
+        # targets; the linker bundled with every GNAT FSF toolchain (15.x
+        # and 16.x alike) rejects them and every link fails with
+        # "malformed file libSystem.tbd" and undefined libc symbols
+        # (cf. https://github.com/alire-project/GNAT-FSF-builds/issues/112).
+        # Switch back to macos-latest once the toolchain linker is fixed.
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install and set up Alire
+        uses: alire-project/setup-alire@v5
+        with:
+          # Same version as the local development environment.
+          version: 2.1.1
+
+      - name: Relocate the Alire cache on Windows
+        # The alr GNAT runtime copies files through a 256-character path
+        # buffer: with the default cache under %LOCALAPPDATA%\alire\cache,
+        # the build dir of dependencies with deep trees exceeds it and
+        # `alr build` fails with "Could not sync build dir"
+        # (cf. https://github.com/alire-project/alire/issues/1762).
+        # A short cache root keeps every path under the limit.
+        if: runner.os == 'Windows'
+        run: alr settings --global --set cache.dir C:\alr-cache
+
+      - name: Cache Alire dependencies
+        # Dependency builds are expensive (Libadalang is the large
+        # share of a cold run), and independent of the sources:
+        # cache the alire data of all the platforms, keyed on both
+        # alire.toml files (the main crate and the backend crate).
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/alire
+            ~/.local/share/alire
+            ~/AppData/Local/alire
+            C:/alr-cache
+          key: ${{ matrix.os }}-alire-${{ hashFiles('alire.toml', 'tools/libadalang_backend/alire.toml') }}
+          restore-keys: |
+            ${{ matrix.os }}-alire-
+
+      - name: Install bbt
+        # The test suite is the bbt executable documentation
+        # (docs/features), exactly as in a local `make check`.
+        shell: bash
+        run: |
+          cd "${RUNNER_TEMP}"
+          alr install bbt
+          echo "$HOME/.alire/bin" >> "${GITHUB_PATH}"
+
+      - name: Build and run the checks
+        # make check = tool build (GNAT 16.x), backend build (GNAT 15.x
+        # line), the bbt scenarios of docs/features, then the
+        # getting-started example of docs/examples, whose chain ends
+        # with a HAC script printing distance = 5.0.
+        env:
+          # On Darwin, avoid file name casing glitches with the GNAT
+          # FSF toolchain (cf. the note in README.md, and
+          # https://forum.ada-lang.io/t/name-file-casing-error-on-darwin/1795).
+          GNAT_FILE_NAME_CASE_SENSITIVE: ${{ startsWith(matrix.os, 'macos') && '1' || '' }}
+        run: make check

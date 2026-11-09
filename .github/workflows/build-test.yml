@@ -104,7 +104,8 @@ jobs:
         # crate root). Follow bbt's releases, not its main branch.
         shell: bash
         run: |
-          TAG=$(gh api repos/LionelDraghi/bbt/releases/latest --jq '.tag_name')
+          TAG=$(git ls-remote --tags https://github.com/LionelDraghi/bbt '0.*' \
+                | awk -F'/' '{print $NF}' | grep -v '\^{}' | sort -V | tail -1)
           echo "Latest bbt release: $TAG"
           git clone --depth 1 --branch "$TAG" https://github.com/LionelDraghi/bbt ../bbt
           (cd ../bbt && alr build)

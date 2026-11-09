@@ -1,7 +1,6 @@
 # hac_bindgen <!-- omit from toc -->
 
 [![image](https://img.shields.io/badge/-inside-blue?logo=ada&logoColor=white&labelColor=grey&logoSize=auto)](https://ada-lang.io/)
-[![Version](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2FLionelDraghi%2Fhac_bindgen%2Fmain%2Falire.toml&query=%24.version&label=latest&style=flat-square)](https://github.com/LionelDraghi/hac_bindgen/blob/main/alire.toml)
 [![bbt](https://img.shields.io/badge/bbt-55%20scenarios%20passing-brightgreen?style=flat-square)](docs/README.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://opensource.org/licenses/Apache-2.0)
 
@@ -54,7 +53,9 @@ make check          # build + run the bbt executable documentation
 ### For the curious reader
 
 Read the [manifesto](docs/manifesto.md) — the motivation and the
-principles.
+principles. Then a concrete run: the [Geometry
+example](docs/examples/README.md) walks a plain package specification
+through generation, build, and a script that calls native Ada code.
 
 ### For users
 

@@ -80,16 +80,33 @@ jobs:
           restore-keys: |
             ${{ matrix.os }}-alire-
 
-      - name: Build bbt from its main branch
-        # The executable documentation runs with bbt, but the release
-        # published in the Alire index predates the GNAT 16 line and
-        # does not compile with the runner's default toolchain. bbt's
-        # main requires GNAT >= 16, exactly like hac_bindgen: build it
-        # from a shallow sibling clone (its gpr leaves the binary at
-        # the crate root), instead of `alr install bbt`.
+      - name: Setup AT-SPI backend dev packages (Linux)
+        # Building bbt (the executable documentation's runner) links its
+        # Linux-only AT-SPI GUI backend against -l:libatspi.so.0,
+        # -lgobject-2.0 and -lglib-2.0: the images carry the runtime
+        # libraries, but the linker needs the -dev symlink of each.
+        # Same step as bbt's own CI.
+        if: runner.os == 'Linux'
         shell: bash
         run: |
-          git clone --depth 1 --branch main https://github.com/LionelDraghi/bbt ../bbt
+          sudo apt-get update
+          sudo apt-get install -y libatspi2.0-dev libglib2.0-dev
+
+      - name: Install bbt from its latest release
+        # The executable documentation runs with bbt. Building bbt from
+        # its main branch made hac_bindgen's CI follow bbt's development
+        # state, and inherit its breakage windows (which is how the
+        # 2026-11-09 run went red). The bbt releases have no binary
+        # assets, and the community index lags behind (0.6.0 there,
+        # 0.6.1 released with the libglib system dependency fix), so
+        # "latest release" here means: clone the latest release tag
+        # shallowly and build it (its gpr leaves the binary at the
+        # crate root). Follow bbt's releases, not its main branch.
+        shell: bash
+        run: |
+          TAG=$(gh api repos/LionelDraghi/bbt/releases/latest --jq '.tag_name')
+          echo "Latest bbt release: $TAG"
+          git clone --depth 1 --branch "$TAG" https://github.com/LionelDraghi/bbt ../bbt
           (cd ../bbt && alr build)
           echo "$(cd ../bbt && pwd)" >> "${GITHUB_PATH}"
 

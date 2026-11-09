@@ -21,6 +21,12 @@ with Libadalang.Expr_Eval;
 with Hac_Bindgen_Backend_Config;
 
 procedure Hac_Bindgen_Backend is
+
+   --  The file name Libadalang gives the interposed standard unit.
+   --  A named constant: standard's predefined entities are compared
+   --  character by character, and an indexed string literal is not
+   --  legal Ada.
+   Standard_Unit_Name : constant String := "__standard";
    package LAL renames Libadalang.Analysis;
    package LCL renames Libadalang.Common;
    package LEE renames Libadalang.Expr_Eval;
@@ -65,15 +71,52 @@ procedure Hac_Bindgen_Backend is
         & ":" & Trim (SR.Start_Column'Image);
    end Loc_Of;
 
-   function Basename (Path : String) return String is
+   --  Recognition of the interposed unit Libadalang gives standard's
+   --  predefined entities from, tolerant of the Windows forms: the
+   --  file name may carry an .ads extension and a directory, and
+   --  Windows builds print the separators as backslashes.
+   function Is_Standard_Unit (Path : String) return Boolean is
+      First : Natural := Path'First;
    begin
+      --  Keep the part after the last directory separator.
       for I in reverse Path'Range loop
-         if Path (I) = '/' then
-            return Path (I + 1 .. Path'Last);
+         if Path (I) = '/' or else Path (I) = '\' then
+            First := I + 1;
+            exit;
          end if;
       end loop;
-      return Path;
-   end Basename;
+
+      --  Strip the extension, if any.
+      declare
+         Last : Natural := Path'Last;
+      begin
+         for I in reverse First .. Path'Last loop
+            if Path (I) = '.' then
+               Last := I - 1;
+               exit;
+            end if;
+         end loop;
+
+         if Last - First + 1 /= 10 then
+            return False;
+         end if;
+
+         --  Case insensitive comparison with Standard_Unit_Name.
+         for I in First .. Last loop
+            declare
+               C : Character := Path (I);
+            begin
+               if C in 'A' .. 'Z' then
+                  C := Character'Val (Character'Pos (C) + 32);
+               end if;
+               if C /= Standard_Unit_Name (I - First + 1) then
+                  return False;
+               end if;
+            end;
+         end loop;
+         return True;
+      end;
+   end Is_Standard_Unit;
 
    --  Resolution identity of the declaration a Name refers to:
    --  standard.<Name> for a predefined entity, file:line:col for a
@@ -95,10 +138,9 @@ procedure Hac_Bindgen_Backend is
          return "unresolved";
       end if;
       declare
-         DN   : constant LAL.Defining_Name := Decl.P_Defining_Name;
-         File : constant String := LAL.Get_Filename (Decl.Unit);
+         DN : constant LAL.Defining_Name := Decl.P_Defining_Name;
       begin
-         if Basename (File) = "__standard" then
+         if Is_Standard_Unit (LAL.Get_Filename (Decl.Unit)) then
             return "standard." & Txt (DN);
          else
             return Loc_Of (DN);

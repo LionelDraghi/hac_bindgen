@@ -18,6 +18,17 @@ BBT_ARTIFACTS := $(ARTIFACTS_DIR)/bbt
 FEATURES_DIR  := docs/features
 PROPOSED_DIR  := docs/proposed
 
+# Optional bbt --keep_going flag: `make check` stops at the first
+# failing scenario, while `make all` and the CI pass it to get the
+# total count of passing and failing scenarios instead of aborting on
+# the first error. `make check KEEP_GOING=--keep_going` does the same
+# by hand.
+KEEP_GOING ?=
+
+# Options shared by every scenario-page run (the features run of make
+# check and the per-prefix targets).
+BBT_SCENARIO_OPTIONS := -nt --yes --cleanup=full
+
 ALL_SCENARII := $(filter-out $(PROPOSED_DIR)/proposal_template.md,\
                  $(wildcard $(FEATURES_DIR)/*.md) \
                  $(wildcard $(PROPOSED_DIR)/*.md))
@@ -41,11 +52,12 @@ if [ -z "$$files" ]; then \
   echo "no scenario matches prefix '$$prefix'" >&2; exit 1; \
 fi; \
 mkdir -p $(BBT_ARTIFACTS); \
-cd tests && $(BBT) -nt --yes --cleanup=full $$files
+cd tests && $(BBT) $(BBT_SCENARIO_OPTIONS) $$files
 endef
 
 .PHONY: all help check build release backend witness metrics examples clean $(SCENARIO_TARGETS)
 
+all: KEEP_GOING = --keep_going
 all: check
 
 help:
@@ -54,6 +66,8 @@ help:
 	@echo "  make check  build (tool + backend), then run the bbt executable"
 	@echo "               documentation: the features scenarios, then the"
 	@echo "               examples page (files stay visible, see make examples)"
+	@echo "               stops at the first failing scenario, unless invoked"
+	@echo "               through all, or with KEEP_GOING=--keep_going"
 	@echo "  make <scenario prefix, case insensitive>  run one scenario page, e.g. make a003, make b001"
 	@echo "  make build  build the tool only (validation mode)"
 	@echo "  make release  build the tool in release mode"
@@ -66,9 +80,9 @@ help:
 check: build backend
 	@echo === running the bbt executable documentation
 	mkdir -p $(BBT_ARTIFACTS)
-	cd tests && $(BBT) -nt --yes --cleanup=full ../$(FEATURES_DIR)
+	cd tests && $(BBT) $(BBT_SCENARIO_OPTIONS) $(KEEP_GOING) ../$(FEATURES_DIR)
 	@echo === running the examples page
-	$(MAKE) examples
+	$(MAKE) examples KEEP_GOING=$(KEEP_GOING)
 	@echo === build and tests OK
 
 $(SCENARIO_TARGETS): build backend
@@ -107,7 +121,7 @@ witness:
 # scenarios it runs without --cleanup, so the files it generates stay
 # visible next to the example source.
 examples:
-	cd docs/examples && $(BBT) --yes README.md
+	cd docs/examples && $(BBT) --yes $(KEEP_GOING) README.md
 
 metrics:
 	@echo === source metrics with gnatmetric

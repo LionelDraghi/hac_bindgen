@@ -39,6 +39,11 @@ package body Hac_Bindgen.Analysis is
       for Path of Backend_Relative_Paths loop
          if GNAT.OS_Lib.Is_Regular_File (Path.all) then
             return Path.all;
+         elsif GNAT.OS_Lib.Is_Regular_File (Path.all & ".exe") then
+            --  The Windows toolchain appends .exe to the executable
+            --  name; neither Is_Regular_File nor the spawn below
+            --  accept the extension-less name.
+            return Path.all & ".exe";
          end if;
       end loop;
 

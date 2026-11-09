@@ -115,10 +115,12 @@ jobs:
         # make check = tool build (GNAT 16.x), backend build (GNAT 15.x
         # line), the bbt scenarios of docs/features, then the
         # getting-started example of docs/examples, whose chain ends
-        # with a HAC script printing distance = 5.0.
+        # with a HAC script printing distance = 5.0. KEEP_GOING asks
+        # bbt to run everything despite failures, so the artifacts keep
+        # the total count of passing and failing scenarios.
         env:
           # On Darwin, avoid file name casing glitches with the GNAT
           # FSF toolchain (cf. the note in README.md, and
           # https://forum.ada-lang.io/t/name-file-casing-error-on-darwin/1795).
           GNAT_FILE_NAME_CASE_SENSITIVE: ${{ startsWith(matrix.os, 'macos') && '1' || '' }}
-        run: make check
+        run: make check KEEP_GOING=--keep_going

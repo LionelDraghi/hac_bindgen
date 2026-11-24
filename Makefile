@@ -5,7 +5,11 @@
 # See README.md, AGENTS.md and docs/dev/development_workflow.md.
 
 ALR      ?= alr
-BBT      ?= bbt
+# bbt runs the executable documentation. It is not a dependency of this crate,
+# so Alire does not expose it: resolve it from the crate environment when a
+# sibling solution declares it, then from any bbt built in the Alire build
+# store (the same way GNATMETRIC below is located), then from the PATH.
+BBT      ?= $(or $(wildcard $(shell bash -c 'eval "$$($(ALR) printenv 2>/dev/null)"; printf "%s" "$$BBT_ALIRE_PREFIX"' 2>/dev/null)/bbt),$(lastword $(sort $(wildcard $(HOME)/.local/share/alire/builds/bbt_*/*/bbt))),$(shell command -v bbt 2>/dev/null),bbt)
 ARTIFACTS_DIR ?= artifacts
 BBT_ARTIFACTS := $(ARTIFACTS_DIR)/bbt
 
